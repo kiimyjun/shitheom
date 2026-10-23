@@ -148,7 +148,7 @@ export class World3D {
     if (this.flipTime !== null) return null;
     this.rayAt(clientX, clientY);
     const hit = this.raycaster.intersectObjects(
-      this.papers.filter((p) => p.mesh.visible && !p.state.done && p.state.mode === "").map((p) => p.mesh),
+      this.papers.filter((p) => p.mesh.visible && !p.state.done && p.state.mode !== "shred").map((p) => p.mesh),
       false,
     )[0];
     return hit ? (hit.object.userData.paperIndex as number) : null;
@@ -156,7 +156,7 @@ export class World3D {
 
   beginDrag(id: number, x: number, y: number) {
     const paper = this.papers[id];
-    if (!paper || paper.state.done || paper.state.mode) return;
+    if (!paper || paper.state.done || paper.state.mode === "shred") return;
     this.cameraRig.freeze();
     this.paperDrag.start(paper, this.rayAt(x, y), this.camera);
     this.dragging = true;

@@ -3,7 +3,7 @@ import { HOLD_MS, MAX_SUBJECTS } from "../domain/rules.mjs";
 
 export const template = `
 <main class="game-shell" aria-label="시혐지 3D 게임">
-  <div id="game-stage" role="application" aria-label="시험지를 더블클릭하면 구겨집니다. 시험지를 파쇄기로 끌어놓으면 파쇄됩니다. 빈 공간 드래그로 시점을 움직이고, 스페이스바를 길게 누른 뒤 놓으면 책상이 뒤집힙니다." tabindex="0">
+  <div id="game-stage" role="application" aria-label="시험지를 더블클릭할 때마다 조금씩 구겨집니다. 시험지를 파쇄기로 끌어놓으면 파쇄됩니다. 빈 공간 드래그로 시점을 움직이고, 스페이스바를 길게 누른 뒤 놓으면 책상이 뒤집힙니다." tabindex="0">
     <div class="loading-screen" id="loading-screen"><span class="loading-spinner"></span><strong>네 책상을 준비하는 중…</strong></div>
   </div>
   <section class="desk-panel" id="desk-panel" aria-label="시험지와 책상 설정">
@@ -32,7 +32,7 @@ export const template = `
   <div class="bottom-hud">
     <div class="desk-status"><strong id="hint-title">오늘 본 시험, 여기에 올려놓자.</strong><span id="hint-detail">왼쪽 위에서 과목을 추가해 봐.</span></div>
     <div class="control-guide" aria-label="게임 조작 안내">
-      <div>${svg("crumple")}<span><strong>더블클릭</strong><small>시험지 구기기</small></span></div>
+      <div>${svg("crumple")}<span><strong>더블클릭</strong><small>조금씩 구기기</small></span></div>
       <div>${svg("shred")}<span><strong>끌어놓기</strong><small>시험지 → 파쇄기</small></span></div>
       <div>${svg("flip")}<span><strong><kbd>SPACE</kbd> 꾹, 떼기</strong><small>${HOLD_MS / 1000}초 충전 후 책상 엎기</small></span></div>
     </div>

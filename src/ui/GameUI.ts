@@ -1,5 +1,5 @@
 import type { GameSnapshot } from "../domain/types";
-import { HOLD_MS } from "../domain/rules.mjs";
+import { CRUMPLE_STEPS, HOLD_MS } from "../domain/rules.mjs";
 import { svg } from "./icons";
 import { template } from "./template";
 
@@ -150,10 +150,14 @@ export class GameUI {
     } else {
       const done = state.papers.filter((paper) => paper.done).length;
       const feeding = state.papers.find((paper) => paper.mode === "shred" && !paper.done);
+      const selected = state.papers[state.selected];
+      const crumpling = selected?.mode === "crumple" && !selected.done;
       title.textContent = feeding ? `${feeding.name}, 미련까지 갈아 버리는 중…`
         : done === state.papers.length ? "남은 건 책상뿐. 시원하게 엎어 볼까?"
+        : crumpling ? `${selected.name}, 조금 더 구겨 버려.`
         : "시험지를 직접 집어 봐.";
       detail.textContent = feeding ? "자동으로 파쇄돼. 잠깐만 기다려 줘."
+        : crumpling ? `구기기 ${selected.progress} / ${CRUMPLE_STEPS} · 더블클릭할 때마다 한 단계씩.`
         : `${done} / ${state.papers.length}장 처리 · 점수도, 제한 시간도 없어.`;
     }
   }

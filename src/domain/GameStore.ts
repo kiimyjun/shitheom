@@ -1,4 +1,4 @@
-import { advancePaper, CRUMPLE_STEPS, MAX_SUBJECTS, normalizeSubject } from "./rules.mjs";
+import { advancePaper, MAX_SUBJECTS, normalizeSubject } from "./rules.mjs";
 import type { GameEvent, GameSnapshot, PaperState, Phase, StateListener } from "./types";
 
 /** Direct actions and state only; no DOM, timers, or 3D engine. */
@@ -74,7 +74,7 @@ export class GameStore {
   crumple(index: number): boolean {
     const paper = this.available(index);
     if (!paper) return false;
-    for (let step = 0; step < CRUMPLE_STEPS; step++) advancePaper(paper, "crumple");
+    advancePaper(paper, "crumple");
     this.emit({ type: "process", paperId: index });
     return true;
   }
@@ -83,6 +83,7 @@ export class GameStore {
     const paper = this.available(index);
     if (!paper || this.papers.some((p) => p.mode === "shred" && !p.done)) return false;
     paper.mode = "shred";
+    paper.progress = 0;
     this.emit({ type: "process", paperId: index });
     return true;
   }
@@ -97,7 +98,7 @@ export class GameStore {
 
   private available(index: number) {
     const paper = this.papers[index];
-    return this.phase === "playing" && paper && !paper.done && paper.mode === "" ? paper : null;
+    return this.phase === "playing" && paper && !paper.done && paper.mode !== "shred" ? paper : null;
   }
 
   flip(): boolean {
