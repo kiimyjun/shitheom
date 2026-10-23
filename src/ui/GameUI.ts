@@ -13,12 +13,15 @@ export interface UIActions {
   mode(mode: Mode): void;
   sound(): void;
   camera(): void;
+  navigateCamera(): void;
+  resetCamera(): void;
 }
 
 /** HTML controls and text. This view has no dependency on Three.js or Rapier. */
 export class GameUI {
   readonly stage: HTMLElement;
   private ready = false;
+  private cameraNavigation = false;
   private toastTimer = 0;
   private lastState?: GameSnapshot;
 
@@ -61,6 +64,14 @@ export class GameUI {
       this.focusStage();
     };
     this.get("#sound-toggle").onclick = () => this.actions.sound();
+    this.get("#camera-navigation").onclick = () => {
+      this.actions.navigateCamera();
+      this.focusStage();
+    };
+    this.get("#camera-reset").onclick = () => {
+      this.actions.resetCamera();
+      this.focusStage();
+    };
     this.get("#camera-button").onclick = () => {
       this.actions.camera();
       this.focusStage();
@@ -183,6 +194,13 @@ export class GameUI {
     this.get("#hint-icon").innerHTML = svg(
       state.phase === "setup" ? "paper" : state.mode,
     );
+    if (this.cameraNavigation) {
+      title.textContent = "원하는 각도로 책상을 둘러봐.";
+      detail.textContent =
+        "드래그로 회전 · 휠로 확대/축소 · ‘게임 조작’으로 돌아가기";
+      step.textContent = "VIEW";
+      return;
+    }
     if (state.phase === "setup") {
       title.textContent = "오늘 본 시험, 여기에 올려놓자.";
       detail.textContent = "과목을 추가하고 3D 책상에 앉아 봐.";
@@ -228,6 +246,19 @@ export class GameUI {
     const button = this.get("#sound-toggle");
     button.innerHTML = `${svg(muted ? "mute" : "sound")}<span>소리 ${muted ? "OFF" : "ON"}</span>`;
     button.setAttribute("aria-pressed", String(!muted));
+  }
+
+  setCameraState(manual: boolean, navigating: boolean) {
+    this.cameraNavigation = navigating;
+    if (this.lastState) this.renderHint(this.lastState);
+    const button = this.get("#camera-navigation");
+    button.setAttribute("aria-pressed", String(navigating));
+    button.textContent = navigating ? "✓ 게임 조작" : "↔ 시점 이동";
+    this.stage.classList.toggle("camera-navigation", navigating);
+    this.get("#camera-help").hidden = !navigating;
+    this.get(".scene-tag").textContent = manual
+      ? "자유 시점 · 우클릭 드래그 / 휠 확대·축소"
+      : "우클릭 드래그로 둘러보기 · 휠로 확대·축소";
   }
 
   setCamera(wide: boolean) {

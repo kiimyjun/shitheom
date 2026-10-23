@@ -14,8 +14,8 @@ export const template = `
   </section>
   <section class="playground" aria-label="시혐지 게임">
     <div class="game-column">
-      <div class="stage-top"><span><i></i> YOUR DESK, YOUR RULES.</span><div class="stage-options"><span id="stage-label">시험지 준비 중</span><button id="camera-button" type="button" aria-label="3D 카메라 시점 바꾸기">↗ 전체 보기</button></div></div>
-      <div id="game-stage" role="application" aria-label="시험지가 놓인 책상. 시험지 선택 후 화면을 클릭하거나 스페이스바를 길게 눌러 플레이하세요." tabindex="0"><div class="scene-tag">REAL 3D · YOUR LITTLE ESCAPE</div><div class="loading-screen" id="loading-screen"><span class="loading-spinner"></span><strong>네 책상을 준비하는 중…</strong></div><div class="charge-overlay" id="charge-overlay" hidden><strong id="charge-label">스페이스바를 꾹 눌러 봐.</strong><div class="charge-track"><div id="charge-fill"></div></div><small>${HOLD_MS / 1000}초 이상 누른 뒤 손을 떼!</small></div></div>
+      <div class="stage-top"><span><i></i> YOUR DESK, YOUR RULES.</span><div class="stage-options"><span id="stage-label">시험지 준비 중</span><button id="camera-navigation" type="button" aria-label="시점 이동 모드" aria-pressed="false">↔ 시점 이동</button><button id="camera-reset" type="button" aria-label="시점 초기화">↺ 원위치</button><button id="camera-button" type="button" aria-label="3D 카메라 시점 바꾸기">↗ 전체 보기</button></div></div>
+      <div id="game-stage" role="application" aria-label="시험지가 놓인 책상. 시험지 선택 후 화면을 클릭하거나 스페이스바를 길게 눌러 플레이하세요." tabindex="0"><div class="scene-tag">우클릭 드래그로 둘러보기 · 휠로 확대·축소</div><div class="loading-screen" id="loading-screen"><span class="loading-spinner"></span><strong>네 책상을 준비하는 중…</strong></div><div id="camera-help" class="camera-help" hidden>드래그로 회전 · 휠 / 두 손가락으로 확대·축소<br><small>게임을 하려면 위의 ‘게임 조작’을 눌러 줘.</small></div><div class="charge-overlay" id="charge-overlay" hidden><strong id="charge-label">스페이스바를 꾹 눌러 봐.</strong><div class="charge-track"><div id="charge-fill"></div></div><small>${HOLD_MS / 1000}초 이상 누른 뒤 손을 떼!</small></div></div>
       <div class="stage-bottom"><div class="hint-icon" id="hint-icon">${svg("paper")}</div><div><strong id="hint-title">오늘 본 시험, 여기에 올려놓자.</strong><p id="hint-detail">오른쪽에서 과목을 추가하고 시작해 봐.</p></div><span class="step-count" id="step-count">READY?</span></div>
     </div>
     <aside class="control-panel">
@@ -43,7 +43,7 @@ export const template = `
       <button type="button" id="reset-button" class="reset-button" disabled>${svg("reset")} 책상 다시 세팅하기</button>
     </aside>
   </section>
-  <div class="under-game"><span><kbd>CLICK</kbd> 구기기 · 파쇄기 <span class="divider">/</span> <kbd>SPACE</kbd> ${HOLD_MS / 1000}초 이상 누른 뒤 놓아 책상 엎기</span><span>시험지 + 혐오 = 시혐지 <span class="tiny-star">✳</span></span></div>
+  <div class="under-game"><span><kbd>CLICK</kbd> 구기기 · 파쇄기 <span class="divider">/</span> <kbd>SPACE</kbd> ${HOLD_MS / 1000}초 이상 누른 뒤 놓아 책상 엎기 <span class="divider">/</span> <kbd>우클릭 드래그</kbd> 시점 회전 · <kbd>휠</kbd> 확대·축소</span><span>시험지 + 혐오 = 시혐지 <span class="tiny-star">✳</span></span></div>
   <footer><span>오늘도 시험 보느라 수고했어.</span><span>LEAVE THE EXAM. KEEP YOUR PEACE.</span></footer>
 </main>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>`;

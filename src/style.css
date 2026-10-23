@@ -1008,3 +1008,75 @@ footer > span:last-child {
     font-size: 8px;
   }
 }
+/* Camera navigation stays separate from left-click game actions. */
+.stage-options {
+  gap: 6px;
+}
+.stage-options > span {
+  margin-right: 5px;
+}
+#camera-navigation[aria-pressed="true"] {
+  background: #d5f349;
+  border-color: #829640;
+  color: #344124;
+}
+#game-stage.camera-navigation,
+#game-stage.camera-navigation canvas {
+  cursor: grab;
+}
+#game-stage.camera-navigation:active,
+#game-stage.camera-navigation:active canvas {
+  cursor: grabbing;
+}
+.camera-help {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 18px;
+  border: 1px solid #9cab71;
+  background: #f6f8e9ed;
+  border-radius: 8px;
+  font-size: 11px;
+  line-height: 1.8;
+  text-align: center;
+  white-space: nowrap;
+  color: #485637;
+  pointer-events: none;
+}
+.camera-help small {
+  color: #7a8567;
+  font-size: 9px;
+}
+.under-game {
+  flex-wrap: wrap;
+}
+.under-game > span:first-child {
+  flex-wrap: wrap;
+}
+@media (max-width: 760px) {
+  .stage-top {
+    padding: 0 10px;
+  }
+  .stage-top > span:first-child {
+    font-size: 6px;
+    letter-spacing: 0.5px;
+  }
+  .stage-options {
+    gap: 4px;
+  }
+  .stage-options button {
+    padding: 4px 5px;
+    font-size: 8px;
+  }
+  .camera-help {
+    font-size: 9px;
+    max-width: 95%;
+    white-space: normal;
+    width: 260px;
+  }
+  .scene-tag {
+    font-size: 7px;
+    letter-spacing: 0.3px;
+  }
+}

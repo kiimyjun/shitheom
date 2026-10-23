@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { SCENE } from "../config";
+import { CameraRig } from "./CameraRig";
 import type { GameSnapshot, Mode, PaperState } from "../domain/types";
 import { PhysicsSystem } from "../physics/PhysicsSystem";
 import { createDesk, createProps, type LooseProp } from "./Desk";
@@ -13,7 +14,9 @@ export class World3D {
   private scene = new THREE.Scene();
   private renderer: THREE.WebGLRenderer;
   private camera = new THREE.PerspectiveCamera(SCENE.camera.fov, 1, 0.1, 80);
-  private cameraTarget = new THREE.Vector3(...SCENE.camera.seated.target);
+  private cameraRig: CameraRig;
+  onCameraInteraction?: () => void;
+  onCameraChange?: (manual: boolean, navigating: boolean) => void;
   private desk: THREE.Group;
   private props: LooseProp[] = [];
   private papers: PaperModel[] = [];
@@ -62,7 +65,10 @@ export class World3D {
     this.renderer.domElement.setAttribute("aria-label", "입체 책상과 시험지");
     stage.prepend(this.renderer.domElement);
     this.camera.position.set(...SCENE.camera.seated.position);
-    this.camera.lookAt(this.cameraTarget);
+    this.cameraRig = new CameraRig(this.camera, stage, this.motionReduced);
+    this.cameraRig.onInteraction = () => this.onCameraInteraction?.();
+    this.cameraRig.onChange = (manual, navigating) =>
+      this.onCameraChange?.(manual, navigating);
     createRoom(this.scene);
     this.desk = createDesk();
     this.scene.add(this.desk);
@@ -184,8 +190,22 @@ export class World3D {
     this.charge = this.motionReduced ? 0 : amount;
   }
   toggleCamera() {
+    this.cameraRig.usePreset();
     this.wide = !this.wide;
     return this.wide;
+  }
+
+  get cameraNavigationMode() {
+    return this.cameraRig.navigationMode;
+  }
+
+  toggleCameraNavigation() {
+    this.cameraRig.toggleNavigation();
+  }
+
+  resetCamera() {
+    this.wide = false;
+    this.cameraRig.usePreset();
   }
 
   flip() {
@@ -317,26 +337,15 @@ export class World3D {
         : this.currentMode === "shred"
           ? SCENE.camera.shred
           : SCENE.camera.seated;
-    const position = new THREE.Vector3(...view.position);
     this.cameraShake *= Math.exp(-7 * dt);
-    if (this.cameraShake > 0.001)
-      position.add(
-        new THREE.Vector3(
-          (Math.random() - 0.5) * this.cameraShake,
-          (Math.random() - 0.5) * this.cameraShake,
-          0,
-        ),
-      );
-    const smoothing = this.motionReduced ? 1 : 1 - Math.exp(-3.5 * dt);
-    this.camera.position.lerp(position, smoothing);
-    this.cameraTarget.lerp(new THREE.Vector3(...view.target), smoothing);
-    this.camera.lookAt(this.cameraTarget);
+    this.cameraRig.update(dt, view, this.cameraShake);
   }
 
   dispose() {
     this.disposed = true;
     cancelAnimationFrame(this.frameId);
     this.observer.disconnect();
+    this.cameraRig.dispose();
     this.physics.dispose();
     this.papers.forEach((paper) => paper.dispose());
     disposeObject(this.scene);

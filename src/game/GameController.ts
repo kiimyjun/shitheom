@@ -39,6 +39,11 @@ export class GameController {
       select: (index) => this.store.select(index),
       mode: (mode) => this.store.setMode(mode),
       sound: () => this.toggleSound(),
+      navigateCamera: () => this.world?.toggleCameraNavigation(),
+      resetCamera: () => {
+        this.world?.resetCamera();
+        this.ui.setCamera(false);
+      },
       camera: () => {
         if (this.world) this.ui.setCamera(this.world.toggleCamera());
       },
@@ -57,7 +62,9 @@ export class GameController {
       }
       this.world.rebuild(this.store.snapshot.subjects, true);
       this.input = new InteractionController(this.ui.stage, {
-        enabled: () => this.store.snapshot.phase === "playing",
+        enabled: () =>
+          this.store.snapshot.phase === "playing" &&
+          !this.world?.cameraNavigationMode,
         flipMode: () => this.store.snapshot.mode === "flip",
         tap: (x, y) => this.tap(x, y),
         charge: (progress, holding) => this.onCharge(progress, holding),
@@ -69,6 +76,9 @@ export class GameController {
             );
         },
       });
+      this.world.onCameraInteraction = () => this.input?.cancel();
+      this.world.onCameraChange = (manual, navigating) =>
+        this.ui.setCameraState(manual, navigating);
       this.ui.setReady();
     } catch (error) {
       console.error("3D initialization failed:", error);
