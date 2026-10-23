@@ -1,4 +1,5 @@
 import { canFlip, chargeProgress } from "../domain/rules.mjs";
+import { PointerGestures } from "./PointerGestures.mjs";
 
 interface Callbacks {
   enabled(): boolean;
@@ -8,10 +9,11 @@ interface Callbacks {
   release(ready: boolean): void;
 }
 
-/** Owns physical input and hold timing. UI buttons never enter the game click path. */
+/** Clicks are committed on release; dragging and multi-touch never process paper. */
 export class InteractionController {
   private started: number | null = null;
   private source: "keyboard" | number | null = null;
+  private gestures = new PointerGestures();
   private animation = 0;
   private abort = new AbortController();
 
@@ -21,8 +23,24 @@ export class InteractionController {
   ) {
     const options = { signal: this.abort.signal };
     stage.addEventListener("pointerdown", this.pointerDown, options);
+    stage.addEventListener("pointermove", this.pointerMove, options);
     stage.addEventListener("pointerup", this.pointerUp, options);
-    stage.addEventListener("pointercancel", () => this.cancel(), options);
+    stage.addEventListener(
+      "pointercancel",
+      (event) => {
+        this.gestures.remove(event.pointerId);
+        this.cancelPointerCharge();
+      },
+      options,
+    );
+    stage.addEventListener(
+      "wheel",
+      () => {
+        this.gestures.reset();
+        this.cancelPointerCharge();
+      },
+      { ...options, passive: true },
+    );
     window.addEventListener("keydown", this.keyDown, options);
     window.addEventListener("keyup", this.keyUp, options);
     window.addEventListener("blur", () => this.cancel(), options);
@@ -36,24 +54,55 @@ export class InteractionController {
   }
 
   private pointerDown = (event: PointerEvent) => {
-    if (event.button !== 0 || !this.callbacks.enabled()) return;
+    if (event.button !== 0) {
+      this.gestures.reset();
+      this.cancelPointerCharge();
+      return;
+    }
+    if (!this.callbacks.enabled()) return;
     this.stage.focus({ preventScroll: true });
-    if (this.callbacks.flipMode()) {
-      this.stage.setPointerCapture(event.pointerId);
-      this.begin(event.pointerId);
-    } else this.callbacks.tap(event.clientX, event.clientY);
+    this.gestures.begin(event.pointerId, event.clientX, event.clientY);
+    this.stage.setPointerCapture(event.pointerId);
+    if (this.gestures.count > 1) {
+      this.cancelPointerCharge();
+      return;
+    }
+    if (this.callbacks.flipMode()) this.begin(event.pointerId);
+  };
+
+  private pointerMove = (event: PointerEvent) => {
+    const gesture = this.gestures.move(
+      event.pointerId,
+      event.clientX,
+      event.clientY,
+    );
+    if (gesture?.dragged || gesture?.multiple) this.cancelPointerCharge();
   };
 
   private pointerUp = (event: PointerEvent) => {
-    if (this.source !== event.pointerId) return;
+    const gesture = this.gestures.end(
+      event.pointerId,
+      event.clientX,
+      event.clientY,
+    );
+    if (!gesture) return;
     const rect = this.stage.getBoundingClientRect();
     const inside =
       event.clientX >= rect.left &&
       event.clientX <= rect.right &&
       event.clientY >= rect.top &&
       event.clientY <= rect.bottom;
-    if (inside) this.release();
-    else this.cancel();
+    const tap =
+      inside &&
+      !gesture.dragged &&
+      !gesture.multiple &&
+      this.callbacks.enabled();
+    if (this.source === event.pointerId) {
+      if (tap && this.callbacks.flipMode()) this.release();
+      else this.cancelPointerCharge();
+    } else if (tap && !this.callbacks.flipMode()) {
+      this.callbacks.tap(event.clientX, event.clientY);
+    }
   };
 
   private keyDown = (event: KeyboardEvent) => {
@@ -98,15 +147,24 @@ export class InteractionController {
   private release() {
     if (this.started === null) return;
     const ready = canFlip(this.started, performance.now());
-    this.cancel();
+    this.cancelCharge();
     this.callbacks.release(ready);
   }
 
-  cancel() {
+  private cancelPointerCharge() {
+    if (this.source !== "keyboard") this.cancelCharge();
+  }
+
+  private cancelCharge() {
     this.started = null;
     this.source = null;
     cancelAnimationFrame(this.animation);
     this.callbacks.charge(0, false);
+  }
+
+  cancel() {
+    this.gestures.reset();
+    this.cancelCharge();
   }
 
   dispose() {

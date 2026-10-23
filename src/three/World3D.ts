@@ -15,8 +15,7 @@ export class World3D {
   private renderer: THREE.WebGLRenderer;
   private camera = new THREE.PerspectiveCamera(SCENE.camera.fov, 1, 0.1, 80);
   private cameraRig: CameraRig;
-  onCameraInteraction?: () => void;
-  onCameraChange?: (manual: boolean, navigating: boolean) => void;
+  onCameraChange?: (manual: boolean) => void;
   private desk: THREE.Group;
   private props: LooseProp[] = [];
   private papers: PaperModel[] = [];
@@ -66,9 +65,7 @@ export class World3D {
     stage.prepend(this.renderer.domElement);
     this.camera.position.set(...SCENE.camera.seated.position);
     this.cameraRig = new CameraRig(this.camera, stage, this.motionReduced);
-    this.cameraRig.onInteraction = () => this.onCameraInteraction?.();
-    this.cameraRig.onChange = (manual, navigating) =>
-      this.onCameraChange?.(manual, navigating);
+    this.cameraRig.onChange = (manual) => this.onCameraChange?.(manual);
     createRoom(this.scene);
     this.desk = createDesk();
     this.scene.add(this.desk);
@@ -193,14 +190,6 @@ export class World3D {
     this.cameraRig.usePreset();
     this.wide = !this.wide;
     return this.wide;
-  }
-
-  get cameraNavigationMode() {
-    return this.cameraRig.navigationMode;
-  }
-
-  toggleCameraNavigation() {
-    this.cameraRig.toggleNavigation();
   }
 
   resetCamera() {

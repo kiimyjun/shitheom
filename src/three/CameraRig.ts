@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { SCENE } from "../config";
+import { PointerGestures } from "../input/PointerGestures.mjs";
 
 type CameraView = {
   readonly position: readonly number[];
@@ -11,15 +12,68 @@ type CameraView = {
 export class CameraRig {
   private controls: OrbitControls;
   private manual = false;
-  private navigating = false;
-  onInteraction?: () => void;
-  onChange?: (manual: boolean, navigating: boolean) => void;
+  private gestures = new PointerGestures();
+  private abort = new AbortController();
+  onChange?: (manual: boolean) => void;
 
   constructor(
     private camera: THREE.PerspectiveCamera,
     private stage: HTMLElement,
     private motionReduced: boolean,
   ) {
+    const options = { capture: true, signal: this.abort.signal };
+    stage.addEventListener(
+      "pointerdown",
+      (event) => {
+        this.gestures.begin(event.pointerId, event.clientX, event.clientY);
+        if (event.button === 1 || event.button === 2 || this.gestures.count > 1)
+          this.takeControl();
+      },
+      options,
+    );
+    stage.addEventListener(
+      "pointermove",
+      (event) => {
+        const gesture = this.gestures.move(
+          event.pointerId,
+          event.clientX,
+          event.clientY,
+        );
+        if (gesture?.dragged || gesture?.multiple) {
+          this.takeControl();
+          stage.classList.add("camera-dragging");
+        }
+      },
+      options,
+    );
+    stage.addEventListener(
+      "pointerup",
+      (event) => {
+        this.gestures.end(event.pointerId, event.clientX, event.clientY);
+        if (!this.gestures.count) stage.classList.remove("camera-dragging");
+      },
+      options,
+    );
+    stage.addEventListener(
+      "pointercancel",
+      (event) => {
+        this.gestures.remove(event.pointerId);
+        if (!this.gestures.count) stage.classList.remove("camera-dragging");
+      },
+      options,
+    );
+    stage.addEventListener("wheel", () => this.takeControl(), {
+      ...options,
+      passive: true,
+    });
+    window.addEventListener(
+      "blur",
+      () => {
+        this.gestures.reset();
+        stage.classList.remove("camera-dragging");
+      },
+      { signal: this.abort.signal },
+    );
     const controls = (this.controls = new OrbitControls(camera, stage));
     const config = SCENE.camera.controls;
     controls.target.set(...SCENE.camera.seated.target);
@@ -38,40 +92,19 @@ export class CameraRig {
     controls.cursor.copy(controls.target);
     controls.maxTargetRadius = config.maxPanDistance;
     controls.mouseButtons = {
-      LEFT: undefined,
+      LEFT: THREE.MOUSE.ROTATE,
       MIDDLE: THREE.MOUSE.PAN,
       RIGHT: THREE.MOUSE.ROTATE,
     };
-    // One-finger play remains available. Touch navigation is explicitly enabled by the view button.
-    controls.touches = { ONE: undefined, TWO: undefined };
-    controls.addEventListener("start", this.startInteraction);
+    controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
     controls.update();
   }
 
-  get navigationMode() {
-    return this.navigating;
-  }
-
-  private startInteraction = () => {
+  private takeControl() {
+    if (this.manual) return;
     this.manual = true;
     this.stage.focus({ preventScroll: true });
-    this.onInteraction?.();
-    this.onChange?.(this.manual, this.navigating);
-  };
-
-  toggleNavigation() {
-    this.navigating = !this.navigating;
-    this.controls.mouseButtons.LEFT = this.navigating
-      ? THREE.MOUSE.ROTATE
-      : undefined;
-    this.controls.touches.ONE = this.navigating
-      ? THREE.TOUCH.ROTATE
-      : undefined;
-    this.controls.touches.TWO = this.navigating
-      ? THREE.TOUCH.DOLLY_PAN
-      : undefined;
-    this.onInteraction?.();
-    this.onChange?.(this.manual, this.navigating);
+    this.onChange?.(true);
   }
 
   usePreset() {
@@ -80,11 +113,7 @@ export class CameraRig {
     this.controls.update();
     this.controls.enableDamping = !this.motionReduced;
     this.manual = false;
-    this.navigating = false;
-    this.controls.mouseButtons.LEFT = undefined;
-    this.controls.touches.ONE = undefined;
-    this.controls.touches.TWO = undefined;
-    this.onChange?.(false, false);
+    this.onChange?.(false);
   }
 
   update(dt: number, view: CameraView, shake: number) {
@@ -118,7 +147,9 @@ export class CameraRig {
   }
 
   dispose() {
-    this.controls.removeEventListener("start", this.startInteraction);
+    this.abort.abort();
+    this.gestures.reset();
+    this.stage.classList.remove("camera-dragging");
     this.controls.dispose();
   }
 }
