@@ -1045,3 +1045,9 @@ footer > span:last-child {
     letter-spacing: 0.3px;
   }
 }
+
+/* Dragging the game should never select surrounding page text. */
+#game-stage {
+  user-select: none;
+  -webkit-user-select: none;
+}
