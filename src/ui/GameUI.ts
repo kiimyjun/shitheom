@@ -1,32 +1,26 @@
-import type { GameSnapshot, Mode } from "../domain/types";
-import { CRUMPLE_STEPS, HOLD_MS, SHRED_STEPS } from "../domain/rules.mjs";
+import type { GameSnapshot } from "../domain/types";
+import { HOLD_MS } from "../domain/rules.mjs";
 import { svg } from "./icons";
 import { template } from "./template";
 
 export interface UIActions {
   addSubject(name: string): string | null;
   removeSubject(index: number): void;
-  start(): void;
-  edit(): void;
   reset(): void;
-  select(index: number): void;
-  mode(mode: Mode): void;
   sound(): void;
   camera(): void;
   resetCamera(): void;
 }
 
-/** HTML controls and text. This view has no dependency on Three.js or Rapier. */
+/** Floating HTML controls; no dependency on the 3D engine. */
 export class GameUI {
   readonly stage: HTMLElement;
   private ready = false;
   private toastTimer = 0;
   private lastState?: GameSnapshot;
+  private subjectsKey = "";
 
-  constructor(
-    private root: HTMLElement,
-    private actions: UIActions,
-  ) {
+  constructor(private root: HTMLElement, private actions: UIActions) {
     root.innerHTML = template;
     this.stage = this.get("#game-stage");
     this.bindActions();
@@ -40,28 +34,31 @@ export class GameUI {
     const input = this.get<HTMLInputElement>("#subject-input");
     const add = (raw: string) => {
       const error = this.actions.addSubject(raw);
-      this.get("#form-feedback").textContent =
-        error ?? `${raw.trim()}, 준비 완료.`;
+      this.get("#form-feedback").textContent = error ?? `${raw.trim()}, 책상에 올려놨어.`;
       if (!error) input.value = "";
       input.focus();
     };
     this.get("#subject-form").addEventListener("submit", (event) => {
       event.preventDefault();
-      add(input.value);
+      if (this.ready) add(input.value);
     });
-    this.root
-      .querySelectorAll<HTMLButtonElement>("[data-add]")
+    this.root.querySelectorAll<HTMLButtonElement>("[data-add]")
       .forEach((button) => (button.onclick = () => add(button.dataset.add!)));
-    this.get("#start-button").onclick = () => {
-      this.actions.start();
-      this.focusStage();
+    this.get("#panel-toggle").onclick = () => {
+      const button = this.get("#panel-toggle");
+      const open = button.getAttribute("aria-expanded") !== "true";
+      button.setAttribute("aria-expanded", String(open));
+      button.setAttribute("aria-label", `시험지 설정 ${open ? "접기" : "펼치기"}`);
+      this.get("#panel-body").hidden = !open;
+      this.get("#desk-panel").classList.toggle("collapsed", !open);
+      if (open) input.focus();
+      else this.focusStage();
     };
-    this.get("#edit-subjects").onclick = () => this.actions.edit();
     this.get("#reset-button").onclick = () => {
       this.actions.reset();
       this.focusStage();
     };
-    this.get("#sound-toggle").onclick = () => this.actions.sound();
+    this.get("#sound-toggle").onclick = () => { this.actions.sound(); this.focusStage(); };
     this.get("#camera-reset").onclick = () => {
       this.actions.resetCamera();
       this.focusStage();
@@ -70,24 +67,20 @@ export class GameUI {
       this.actions.camera();
       this.focusStage();
     };
-    this.root
-      .querySelectorAll<HTMLButtonElement>("[data-mode]")
-      .forEach((button) => {
-        button.onclick = () => {
-          this.actions.mode(button.dataset.mode as Mode);
-          if (this.lastState?.phase !== "setup") this.focusStage();
-        };
-      });
   }
 
-  private focusStage() {
-    this.stage.focus({ preventScroll: true });
-  }
+  private focusStage() { this.stage.focus({ preventScroll: true }); }
 
   setReady() {
     this.ready = true;
     this.get("#loading-screen").hidden = true;
     if (this.lastState) this.render(this.lastState);
+    if (matchMedia("(max-width: 600px)").matches && this.lastState?.subjects.length) {
+      this.get("#panel-toggle").setAttribute("aria-expanded", "false");
+      this.get("#panel-toggle").setAttribute("aria-label", "시험지 설정 펼치기");
+      this.get("#panel-body").hidden = true;
+      this.get("#desk-panel").classList.add("collapsed");
+    }
   }
 
   showFailure() {
@@ -106,27 +99,18 @@ export class GameUI {
 
   render(state: GameSnapshot) {
     this.lastState = state;
-    const setup = state.phase === "setup";
-    this.get("#setup-panel").hidden = !setup;
-    this.get("#play-panel").hidden = setup;
-    this.get<HTMLButtonElement>("#start-button").disabled =
-      !this.ready || !state.subjects.length;
-    this.get<HTMLButtonElement>("#reset-button").disabled =
-      setup || !this.ready;
-    this.get("#stage-label").textContent = setup
-      ? "시험지 준비 중"
-      : state.phase === "flipped"
-        ? "오늘은 여기까지."
-        : "마음껏 해도 괜찮아";
-    this.root
-      .querySelectorAll<HTMLButtonElement>("[data-mode]")
-      .forEach((button) => {
-        const selected = button.dataset.mode === state.mode;
-        button.classList.toggle("active", selected);
-        button.setAttribute("aria-pressed", String(selected));
-      });
-    if (setup) this.renderSubjects(state);
-    else this.renderPapers(state);
+    this.get<HTMLButtonElement>("#reset-button").disabled = !this.ready || !state.subjects.length;
+    this.get<HTMLInputElement>("#subject-input").disabled = !this.ready;
+    this.root.querySelectorAll<HTMLButtonElement>("[data-add], [type=submit]")
+      .forEach((button) => { button.disabled = !this.ready; });
+    const done = state.papers.filter((paper) => paper.done).length;
+    this.get("#panel-summary").textContent = state.subjects.length ? `시험지 ${state.subjects.length}장` : "책상 준비";
+    this.get("#done-count").textContent = `${done} / ${state.subjects.length} 처리`;
+    this.get("#stage-label").textContent = state.phase === "flipped"
+      ? "시원하다. 이제 좀 살겠네." : "오늘도 시험 보느라 수고했어.";
+    // Keep delete buttons stable while a pointer is interacting with the panel.
+    const key = JSON.stringify([state.subjects, state.papers.map((paper) => paper.done)]);
+    if (this.subjectsKey !== key) { this.subjectsKey = key; this.renderSubjects(state); }
     this.renderHint(state);
   }
 
@@ -135,9 +119,9 @@ export class GameUI {
     list.replaceChildren();
     state.subjects.forEach((name, index) => {
       const chip = document.createElement("span");
-      chip.className = "subject-chip";
+      chip.className = `subject-chip${state.papers[index]?.done ? " done" : ""}`;
       const label = document.createElement("span");
-      label.textContent = name;
+      label.textContent = `${state.papers[index]?.done ? "✓ " : ""}${name}`;
       const button = document.createElement("button");
       button.type = "button";
       button.textContent = "×";
@@ -149,83 +133,44 @@ export class GameUI {
     if (!state.subjects.length) {
       const empty = document.createElement("p");
       empty.className = "empty-note";
-      empty.textContent = "아직 올려놓은 시험지가 없어.";
+      empty.textContent = "시험지는 여기 두고, 마음만 가볍게.";
       list.append(empty);
     }
-  }
-
-  private renderPapers(state: GameSnapshot) {
-    const list = this.get("#paper-selector");
-    list.replaceChildren();
-    state.papers.forEach((paper, index) => {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = `paper-option${index === state.selected ? " selected" : ""}${paper.done ? " done" : ""}`;
-      button.setAttribute("aria-pressed", String(index === state.selected));
-      const number = document.createElement("span");
-      number.className = "paper-number";
-      number.textContent = String(index + 1).padStart(2, "0");
-      const name = document.createElement("span");
-      name.textContent = paper.name;
-      const status = document.createElement("span");
-      status.className = "paper-check";
-      status.textContent = paper.done ? "✓" : "↗";
-      button.append(number, name, status);
-      button.onclick = () => {
-        this.actions.select(index);
-        this.focusStage();
-      };
-      list.append(button);
-    });
-    this.get("#done-count").textContent =
-      `${state.papers.filter((p) => p.done).length} / ${state.papers.length}`;
   }
 
   private renderHint(state: GameSnapshot) {
     const title = this.get("#hint-title");
     const detail = this.get("#hint-detail");
-    const step = this.get("#step-count");
-    this.get("#hint-icon").innerHTML = svg(
-      state.phase === "setup" ? "paper" : state.mode,
-    );
     if (state.phase === "setup") {
-      title.textContent = "오늘 본 시험, 여기에 올려놓자.";
-      detail.textContent = "과목을 추가하고 3D 책상에 앉아 봐.";
-      step.textContent = "READY?";
-      return;
-    }
-    if (state.phase === "flipped") {
+      title.textContent = "시험은 끝. 이제 네 차례.";
+      detail.textContent = "왼쪽 위에서 과목을 추가해 봐.";
+    } else if (state.phase === "flipped") {
       title.textContent = "그래. 오늘은 이 정도면 됐어.";
-      detail.textContent = "다시 하고 싶으면 책상을 새로 세팅해.";
-      step.textContent = "후련!";
-      return;
-    }
-    const paper = state.papers[state.selected];
-    if (state.mode === "flip") {
-      title.textContent = "스페이스바를 꾹. 준비되면 놓아.";
-      detail.textContent = `${HOLD_MS / 1000}초 이상 누른 뒤 놓으면 책상이 뒤집혀.`;
-      step.textContent = "HOLD SPACE";
-    } else if (paper.done) {
-      title.textContent = `${paper.name}, 처리 끝.`;
-      detail.textContent = "다른 시험지를 고르거나 책상을 엎어 봐.";
-      step.textContent = "CLEAR";
+      detail.textContent = "왼쪽 위에서 책상을 다시 세팅할 수 있어.";
     } else {
-      title.textContent =
-        state.mode === "crumple"
-          ? "화면을 클릭해서 구겨 버려."
-          : "화면을 클릭해서 갈아 버려.";
-      detail.textContent = `선택한 과목: ${paper.name} · 클릭할 때마다 진행돼.`;
-      step.textContent = `${paper.mode === state.mode ? paper.progress : 0} / ${state.mode === "crumple" ? CRUMPLE_STEPS : SHRED_STEPS}`;
+      const done = state.papers.filter((paper) => paper.done).length;
+      const feeding = state.papers.find((paper) => paper.mode === "shred" && !paper.done);
+      title.textContent = feeding ? `${feeding.name}, 미련까지 갈아 버리는 중…`
+        : done === state.papers.length ? "남은 건 책상뿐. 시원하게 엎어 볼까?"
+        : "시험지를 직접 집어 봐.";
+      detail.textContent = feeding ? "자동으로 파쇄돼. 잠깐만 기다려 줘."
+        : `${done} / ${state.papers.length}장 처리 · 점수도, 제한 시간도 없어.`;
     }
+  }
+
+  setDrag(active: boolean, over = false, busy = false) {
+    const hint = this.get("#drag-hint");
+    hint.hidden = !active;
+    hint.classList.toggle("over", over && !busy);
+    hint.textContent = busy ? "파쇄기 사용 중. 잠깐만 기다려 줘."
+      : over ? "여기서 놓으면 드르륵!" : "파쇄기 위로 끌어다 놓아 봐.";
   }
 
   setCharge(progress: number, holding: boolean) {
     this.get("#charge-overlay").hidden = !holding;
     this.get("#charge-fill").style.width = `${progress * 100}%`;
-    this.get("#charge-label").textContent =
-      progress >= 1
-        ? "준비됐어. 손을 떼!"
-        : `꾹… ${((progress * HOLD_MS) / 1000).toFixed(1)} / ${HOLD_MS / 1000}초`;
+    this.get("#charge-label").textContent = progress >= 1 ? "준비됐어. 손을 떼!"
+      : `꾹… ${((progress * HOLD_MS) / 1000).toFixed(1)} / ${HOLD_MS / 1000}초`;
     this.get("#charge-overlay").classList.toggle("charged", progress >= 1);
   }
 
@@ -233,32 +178,23 @@ export class GameUI {
     const button = this.get("#sound-toggle");
     button.innerHTML = `${svg(muted ? "mute" : "sound")}<span>소리 ${muted ? "OFF" : "ON"}</span>`;
     button.setAttribute("aria-pressed", String(!muted));
+    button.setAttribute("aria-label", muted ? "소리 켜기" : "소리 끄기");
+    button.title = muted ? "소리 켜기" : "소리 끄기";
   }
-
   setCameraState(manual: boolean) {
-    this.get(".scene-tag").textContent = manual
-      ? "자유 시점 · 클릭은 처리 / 드래그는 회전"
-      : "클릭으로 처리 · 드래그로 둘러보기 · 휠로 확대·축소";
+    this.get("#camera-reset").classList.toggle("manual", manual);
   }
-
   setCamera(wide: boolean) {
-    this.get("#camera-button").textContent = wide
-      ? "↙ 책상 앞으로"
-      : "↗ 전체 보기";
+    const button = this.get("#camera-button");
+    button.innerHTML = wide ? "↙<span>책상 앞으로</span>" : "↗<span>전체 보기</span>";
+    button.setAttribute("aria-label", wide ? "책상 앞으로" : "전체 보기");
   }
-
   toast(message: string) {
     const toast = this.get("#toast");
     toast.textContent = message;
     toast.classList.add("visible");
     clearTimeout(this.toastTimer);
-    this.toastTimer = window.setTimeout(
-      () => toast.classList.remove("visible"),
-      2400,
-    );
+    this.toastTimer = window.setTimeout(() => toast.classList.remove("visible"), 2400);
   }
-
-  dispose() {
-    clearTimeout(this.toastTimer);
-  }
+  dispose() { clearTimeout(this.toastTimer); }
 }

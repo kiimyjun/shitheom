@@ -1,4 +1,3 @@
-export type Mode = "crumple" | "shred" | "flip";
 export type Phase = "setup" | "playing" | "flipped";
 export interface PaperState {
   id: number;
@@ -11,16 +10,9 @@ export interface GameSnapshot {
   subjects: readonly string[];
   papers: readonly PaperState[];
   selected: number;
-  mode: Mode;
   phase: Phase;
 }
 export type GameEvent =
-  | "subjects"
-  | "start"
-  | "edit"
-  | "reset"
-  | "select"
-  | "mode"
-  | "process"
-  | "flip";
+  | { type: "subjects" | "reset" | "select" | "flip" }
+  | { type: "process"; paperId: number };
 export type StateListener = (snapshot: GameSnapshot, event: GameEvent) => void;

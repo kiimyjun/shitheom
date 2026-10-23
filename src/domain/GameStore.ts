@@ -1,32 +1,24 @@
-import { advancePaper, MAX_SUBJECTS, normalizeSubject } from "./rules.mjs";
-import type {
-  GameEvent,
-  GameSnapshot,
-  Mode,
-  PaperState,
-  Phase,
-  StateListener,
-} from "./types";
+import { advancePaper, CRUMPLE_STEPS, MAX_SUBJECTS, normalizeSubject } from "./rules.mjs";
+import type { GameEvent, GameSnapshot, PaperState, Phase, StateListener } from "./types";
 
-/** Game rules live here. This class never imports the DOM or the 3D engine. */
+/** Direct actions and state only; no DOM, timers, or 3D engine. */
 export class GameStore {
   private subjects: string[];
   private papers: PaperState[] = [];
   private selected = 0;
-  private mode: Mode = "crumple";
   private phase: Phase = "setup";
   private listeners = new Set<StateListener>();
 
   constructor(subjects: string[]) {
     this.subjects = [...subjects];
+    this.resetPapers();
   }
 
   get snapshot(): GameSnapshot {
     return {
       subjects: [...this.subjects],
-      papers: this.papers.map((p) => ({ ...p })),
+      papers: this.papers.map((paper) => ({ ...paper })),
       selected: this.selected,
-      mode: this.mode,
       phase: this.phase,
     };
   }
@@ -37,84 +29,82 @@ export class GameStore {
   }
 
   private emit(event: GameEvent) {
-    const snapshot = this.snapshot;
-    this.listeners.forEach((listener) => listener(snapshot, event));
+    const state = this.snapshot;
+    this.listeners.forEach((listener) => listener(state, event));
   }
 
   addSubject(raw: string): string | null {
-    if (this.phase !== "setup") return "과목 수정 화면에서 추가해 줘.";
     const name = normalizeSubject(raw);
     if (!name) return "과목 이름을 먼저 적어줘.";
     if (this.subjects.includes(name)) return "이미 책상에 올려놓은 과목이야.";
     if (this.subjects.length >= MAX_SUBJECTS)
       return `한 번에 ${MAX_SUBJECTS}과목까지 올릴 수 있어.`;
     this.subjects.push(name);
-    this.emit("subjects");
+    this.resetPapers();
+    this.emit({ type: "subjects" });
     return null;
   }
 
   removeSubject(index: number) {
-    if (this.phase !== "setup") return;
+    if (!this.subjects[index]) return;
     this.subjects.splice(index, 1);
-    this.emit("subjects");
-  }
-
-  start() {
-    if (!this.subjects.length) return;
     this.resetPapers();
-    this.phase = "playing";
-    this.emit("start");
-  }
-
-  edit() {
-    this.phase = "setup";
-    this.emit("edit");
+    this.emit({ type: "subjects" });
   }
 
   reset() {
-    if (this.phase === "setup") return;
     this.resetPapers();
-    this.phase = "playing";
-    this.emit("reset");
+    this.emit({ type: "reset" });
   }
 
   private resetPapers() {
     this.selected = 0;
+    this.phase = this.subjects.length ? "playing" : "setup";
     this.papers = this.subjects.map((name, id) => ({
-      id,
-      name,
-      mode: "",
-      progress: 0,
-      done: false,
+      id, name, mode: "", progress: 0, done: false,
     }));
   }
 
   select(index: number) {
-    if (this.phase !== "playing" || !this.papers[index]) return;
+    if (this.phase !== "playing" || !this.papers[index] || this.selected === index) return;
     this.selected = index;
-    this.emit("select");
+    this.emit({ type: "select" });
   }
 
-  setMode(mode: Mode) {
-    this.mode = mode;
-    this.emit("mode");
-  }
-
-  process(): boolean {
-    if (this.phase !== "playing" || this.mode === "flip") return false;
-    const paper = this.papers[this.selected];
-    if (!paper || !advancePaper(paper, this.mode)) return false;
-    this.emit("process");
+  crumple(index: number): boolean {
+    const paper = this.available(index);
+    if (!paper) return false;
+    for (let step = 0; step < CRUMPLE_STEPS; step++) advancePaper(paper, "crumple");
+    this.emit({ type: "process", paperId: index });
     return true;
   }
 
+  beginShred(index: number): boolean {
+    const paper = this.available(index);
+    if (!paper || this.papers.some((p) => p.mode === "shred" && !p.done)) return false;
+    paper.mode = "shred";
+    this.emit({ type: "process", paperId: index });
+    return true;
+  }
+
+  shredStep(index: number): boolean {
+    const paper = this.papers[index];
+    if (this.phase !== "playing" || !paper || paper.mode !== "shred" || paper.done) return false;
+    advancePaper(paper, "shred");
+    this.emit({ type: "process", paperId: index });
+    return true;
+  }
+
+  private available(index: number) {
+    const paper = this.papers[index];
+    return this.phase === "playing" && paper && !paper.done && paper.mode === "" ? paper : null;
+  }
+
   flip(): boolean {
-    if (this.phase !== "playing" || this.mode !== "flip") return false;
+    if (this.phase !== "playing") return false;
     this.phase = "flipped";
-    this.papers.forEach((paper) => {
-      paper.done = true;
-    });
-    this.emit("flip");
+    this.papers.forEach((paper) => { paper.done = true; });
+    this.emit({ type: "flip" });
     return true;
   }
 }

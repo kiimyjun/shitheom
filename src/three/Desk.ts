@@ -104,12 +104,13 @@ export function createProps(desk: THREE.Group): LooseProp[] {
   );
   cover.rotation.x = -Math.PI / 2;
   book.add(cover);
-  add(book, [-2.48, 0.14, 0.7], [0.55, 0.11, 0.73], 0.7).rotation.y = 0.18;
+  book.scale.setScalar(0.6);
+  add(book, [-3.05, 0.09, 0.65], [0.33, 0.066, 0.44], 0.4).rotation.y = 0.08;
 
   const eraser = new THREE.Group();
   eraser.add(box([0.45, 0.14, 0.24], "#d8b5a3", [0, 0, 0]));
   eraser.add(box([0.25, 0.145, 0.245], "#f4eed8", [0, 0, 0]));
-  add(eraser, [-1.67, 0.1, 1.1], [0.23, 0.08, 0.13]).rotation.y = -0.2;
+  add(eraser, [-3.05, 0.1, 1.4], [0.23, 0.08, 0.13]).rotation.y = -0.2;
   for (let i = 0; i < 2; i++) {
     const pencil = new THREE.Group();
     const shaft = mesh(
@@ -127,7 +128,7 @@ export function createProps(desk: THREE.Group): LooseProp[] {
     pencil.add(tip);
     add(
       pencil,
-      [-1.3 + i * 0.25, 0.05, 0.9],
+      [-3.15 + i * 0.23, 0.05, -0.1],
       [0.045, 0.045, 0.65],
       0.08,
     ).rotation.y = -0.3 + i * 0.22;
@@ -169,7 +170,7 @@ export function createProps(desk: THREE.Group): LooseProp[] {
     ),
   );
   lamp.children[lamp.children.length - 1].rotation.x = -Math.PI / 2;
-  add(lamp, [-2.7, 0.01, -1.03], [0.48, 0.8, 0.48], 1.2);
+  add(lamp, [-3.1, 0.01, -1.15], [0.48, 0.8, 0.48], 1.2);
 
   const note = new THREE.Group();
   const noteMesh = mesh(
@@ -181,6 +182,7 @@ export function createProps(desk: THREE.Group): LooseProp[] {
   );
   noteMesh.rotation.x = -Math.PI / 2;
   note.add(noteMesh);
-  add(note, [2.35, 0.025, -1], [0.45, 0.012, 0.44], 0.02).rotation.y = -0.13;
+  note.scale.setScalar(0.5);
+  add(note, [3.15, 0.025, -1.4], [0.225, 0.012, 0.22], 0.02).rotation.y = -0.13;
   return props;
 }

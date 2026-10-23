@@ -48,3 +48,22 @@ test("cancelling a gesture cannot produce a delayed tap on release", () => {
   gestures.reset();
   assert.equal(gestures.end(1, 10, 10), null);
 });
+
+import { PaperTaps, DOUBLE_TAP_MS } from "../src/input/PaperTaps.mjs";
+
+test("only two nearby taps on the same paper within the threshold crumple it", () => {
+  const taps = new PaperTaps();
+  assert.equal(taps.tap(0, 10, 10, 0), false);
+  assert.equal(taps.tap(1, 10, 10, 100), false);
+  assert.equal(taps.tap(1, 11, 12, 200), true);
+  assert.equal(taps.tap(1, 11, 12, 250), false);
+  assert.equal(taps.tap(1, 11, 12, 251 + DOUBLE_TAP_MS), false);
+  assert.equal(taps.tap(1, 60, 60, 252 + DOUBLE_TAP_MS), false);
+});
+
+test("a drag, cancellation, or background tap breaks the double-tap sequence", () => {
+  const taps = new PaperTaps();
+  taps.tap(0, 10, 10, 0);
+  taps.reset();
+  assert.equal(taps.tap(0, 10, 10, 100), false);
+});

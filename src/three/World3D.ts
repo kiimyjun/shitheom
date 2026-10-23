@@ -1,10 +1,11 @@
 import * as THREE from "three";
 import { SCENE } from "../config";
 import { CameraRig } from "./CameraRig";
-import type { GameSnapshot, Mode, PaperState } from "../domain/types";
+import type { GameSnapshot, PaperState } from "../domain/types";
 import { PhysicsSystem } from "../physics/PhysicsSystem";
 import { createDesk, createProps, type LooseProp } from "./Desk";
 import { PaperModel } from "./PaperModel";
+import { PaperDrag } from "./PaperDrag";
 import { createRoom } from "./Room";
 import { Shredder } from "./Shredder";
 import { disposeObject, material, mesh } from "./utils";
@@ -30,7 +31,9 @@ export class World3D {
   private deskReleased = false;
   private cameraShake = 0;
   private wide = false;
-  private currentMode: Mode = "crumple";
+  private paperDrag = new PaperDrag();
+  private dragging = false;
+  private shredderBounds = new THREE.Box3(new THREE.Vector3(3.48, 0.1, -0.8), new THREE.Vector3(5.32, 2.2, 0.8));
   private motionReduced = matchMedia("(prefers-reduced-motion: reduce)")
     .matches;
 
@@ -65,6 +68,7 @@ export class World3D {
     stage.prepend(this.renderer.domElement);
     this.camera.position.set(...SCENE.camera.seated.position);
     this.cameraRig = new CameraRig(this.camera, stage, this.motionReduced);
+    this.cameraRig.canOrbit = (x, y) => this.pick(x, y) === null;
     this.cameraRig.onChange = (manual) => this.onCameraChange?.(manual);
     createRoom(this.scene);
     this.desk = createDesk();
@@ -79,13 +83,13 @@ export class World3D {
     this.frameId = requestAnimationFrame(this.frame);
   }
 
-  rebuild(names: readonly string[], preview = false) {
+  rebuild(names: readonly string[]) {
+    this.cancelDrag();
     this.physics.reset();
     this.props.forEach((prop) => disposeObject(prop.object));
     this.props = [];
     this.papers.forEach((paper) => paper.dispose());
     this.papers = [];
-    this.currentMode = "crumple";
     this.flipTime = null;
     this.deskReleased = false;
     this.charge = 0;
@@ -95,7 +99,7 @@ export class World3D {
     this.props = createProps(this.desk);
     this.physics.createDesk(this.desk);
     this.shredder.reset();
-    const subjects = names.length ? names : ["미적분학", "전공필수", "영어"];
+    const subjects = names;
     subjects.forEach((name, id) => {
       const paper = new PaperModel({
         id,
@@ -104,81 +108,98 @@ export class World3D {
         mode: "",
         done: false,
       });
-      const x =
-        (id - (subjects.length - 1) / 2) * (subjects.length > 4 ? 0.36 : 0.58);
+      const columns = Math.min(subjects.length, 4);
+      const row = Math.floor(id / 4);
+      const rowCount = Math.min(4, subjects.length - row * 4);
+      const x = (id % columns - (rowCount - 1) / 2) * 1.55 + (subjects.length >= 4 ? 0.45 : 0);
       paper.targetPosition.set(
         x,
-        SCENE.desk.height + 0.035 + id * 0.011,
-        0.08 + Math.abs(x) * 0.15,
+        SCENE.desk.height + 0.045 + row * 0.02,
+        subjects.length > 4 ? -0.78 + row * 1.55 : 0.08,
       );
       paper.targetRotation.setFromEuler(
-        new THREE.Euler(-Math.PI / 2, 0, (id - 1) * 0.16),
+        new THREE.Euler(-Math.PI / 2, 0, (id % 4 - (rowCount - 1) / 2) * 0.045),
       );
       paper.group.position.copy(paper.targetPosition);
       paper.group.quaternion.copy(paper.targetRotation);
       this.scene.add(paper.group);
       this.papers.push(paper);
     });
-    if (!preview)
-      this.layout({
-        subjects,
-        selected: 0,
-        mode: "crumple",
-        phase: "playing",
-        papers: [],
-      });
   }
 
   layout(state: GameSnapshot) {
     if (state.phase !== "playing") return;
-    this.currentMode = state.mode;
     this.papers.forEach((paper, index) => {
-      const selected = index === state.selected;
-      paper.setSelected(selected);
-      if (paper.released || paper.state.done) return;
-      if (selected && state.mode === "shred") {
-        paper.targetPosition
-          .copy(this.shredder.slot)
-          .add(new THREE.Vector3(0, SCENE.paper.height / 2, 0));
-        paper.targetRotation.setFromEuler(new THREE.Euler(0, -0.13, 0));
-      } else {
-        const count = this.papers.length;
-        const base = (index - (count - 1) / 2) * (count > 4 ? 0.4 : 0.68);
-        paper.targetPosition.set(
-          selected ? -0.05 : base + (index < state.selected ? -0.65 : 0.65),
-          SCENE.desk.height + (selected ? 0.11 : 0.025 + index * 0.012),
-          selected ? 0.42 : -0.05,
-        );
-        paper.targetRotation.setFromEuler(
-          new THREE.Euler(
-            -Math.PI / 2,
-            0,
-            selected ? -0.035 : (index - 1) * 0.16,
-          ),
-        );
-      }
+      paper.setSelected(index === state.selected);
     });
   }
 
-  pick(clientX: number, clientY: number): number | null {
+  private rayAt(clientX: number, clientY: number) {
     const rect = this.stage.getBoundingClientRect();
     const pointer = new THREE.Vector2(
       ((clientX - rect.left) / rect.width) * 2 - 1,
       (-(clientY - rect.top) / rect.height) * 2 + 1,
     );
     this.raycaster.setFromCamera(pointer, this.camera);
+    return this.raycaster.ray;
+  }
+
+  pick(clientX: number, clientY: number): number | null {
+    if (this.flipTime !== null) return null;
+    this.rayAt(clientX, clientY);
     const hit = this.raycaster.intersectObjects(
-      this.papers.filter((p) => p.mesh.visible).map((p) => p.mesh),
+      this.papers.filter((p) => p.mesh.visible && !p.state.done && p.state.mode === "").map((p) => p.mesh),
       false,
     )[0];
     return hit ? (hit.object.userData.paperIndex as number) : null;
   }
 
+  beginDrag(id: number, x: number, y: number) {
+    const paper = this.papers[id];
+    if (!paper || paper.state.done || paper.state.mode) return;
+    this.cameraRig.freeze();
+    this.paperDrag.start(paper, this.rayAt(x, y), this.camera);
+    this.dragging = true;
+    this.stage.classList.add("paper-dragging");
+    this.shredder.setDropTarget(true, false);
+  }
+
+  moveDrag(x: number, y: number) {
+    const ray = this.rayAt(x, y);
+    this.paperDrag.move(ray);
+    const over = ray.intersectsBox(this.shredderBounds);
+    this.shredder.setDropTarget(this.dragging, over);
+    return over;
+  }
+
+  endDrag(x: number, y: number, available: boolean) {
+    const over = this.moveDrag(x, y) && available;
+    const id = this.paperDrag.end(over);
+    this.clearDrag();
+    return over ? id : null;
+  }
+
+  cancelDrag() { this.paperDrag.cancel(); this.clearDrag(); }
+  private clearDrag() {
+    this.dragging = false;
+    this.stage.classList.remove("paper-dragging");
+    this.shredder?.setDropTarget(false, false);
+  }
+
+  hover(x: number, y: number) {
+    this.stage.classList.toggle("paper-hover", this.pick(x, y) !== null);
+  }
+
   processPaper(state: PaperState) {
     this.papers[state.id]?.applyState(state);
     if (state.mode === "shred") {
-      this.shredder.pulse();
-      this.emitStrips();
+      const paper = this.papers[state.id];
+      paper.targetPosition.copy(this.shredder.slot).add(new THREE.Vector3(0, SCENE.paper.height / 2, 0));
+      paper.targetRotation.identity();
+      if (state.progress > 0) {
+        this.shredder.pulse();
+        this.emitStrips();
+      }
     }
     this.cameraShake = this.motionReduced ? 0 : 0.025;
   }
@@ -262,6 +283,8 @@ export class World3D {
     if (!width || !height) return;
     this.renderer.setSize(width, height, false);
     this.camera.aspect = width / height;
+    // Widen the vertical field of view on tall windows so the shredder stays reachable.
+    this.camera.fov = THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(SCENE.camera.fov / 2)) * Math.max(1, 1.5 / this.camera.aspect)));
     this.camera.updateProjectionMatrix();
   }
 
@@ -323,9 +346,7 @@ export class World3D {
       ? SCENE.camera.wide
       : this.flipTime !== null
         ? SCENE.camera.flipped
-        : this.currentMode === "shred"
-          ? SCENE.camera.shred
-          : SCENE.camera.seated;
+        : SCENE.camera.seated;
     this.cameraShake *= Math.exp(-7 * dt);
     this.cameraRig.update(dt, view, this.cameraShake);
   }

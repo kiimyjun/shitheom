@@ -3,16 +3,14 @@ import { GameStore } from "../domain/GameStore";
 import type { GameEvent, GameSnapshot } from "../domain/types";
 import { InteractionController } from "../input/InteractionController";
 import { GameAudio } from "../services/audio";
-import {
-  loadMuted,
-  loadSubjects,
-  saveMuted,
-  saveSubjects,
-} from "../services/storage";
+import { loadMuted, loadSubjects, saveMuted, saveSubjects } from "../services/storage";
 import { World3D } from "../three/World3D";
 import { GameUI } from "../ui/GameUI";
 
-/** Connects state, view, input, sound, and 3D. No geometry is authored in this file. */
+const SHRED_ALIGN_MS = 450;
+const SHRED_STEP_MS = 170;
+
+/** Connects direct actions, state, view, sound, and the 3D scene. */
 export class GameController {
   private store = new GameStore(loadSubjects());
   private ui: GameUI;
@@ -22,22 +20,17 @@ export class GameController {
   private unsubscribe: () => void;
   private charged = false;
   private disposed = false;
+  private shredTimer = 0;
 
   constructor(root: HTMLElement) {
     this.audio.muted = loadMuted();
     this.ui = new GameUI(root, {
       addSubject: (name) => this.store.addSubject(name),
       removeSubject: (index) => this.store.removeSubject(index),
-      start: () => {
-        if (this.world) this.store.start();
-      },
-      edit: () => this.store.edit(),
       reset: () => {
         this.store.reset();
         this.ui.toast("새 시험지 준비 완료. 한 번 더?");
       },
-      select: (index) => this.store.select(index),
-      mode: (mode) => this.store.setMode(mode),
       sound: () => this.toggleSound(),
       resetCamera: () => {
         this.world?.resetCamera();
@@ -55,22 +48,33 @@ export class GameController {
   async initialize() {
     try {
       this.world = await World3D.create(this.ui.stage);
-      if (this.disposed) {
-        this.world.dispose();
-        return;
-      }
-      this.world.rebuild(this.store.snapshot.subjects, true);
+      if (this.disposed) { this.world.dispose(); return; }
+      this.world.rebuild(this.store.snapshot.subjects);
+      this.world.layout(this.store.snapshot);
       this.input = new InteractionController(this.ui.stage, {
         enabled: () => this.store.snapshot.phase === "playing",
-        flipMode: () => this.store.snapshot.mode === "flip",
-        tap: (x, y) => this.tap(x, y),
+        pick: (x, y) => this.world?.pick(x, y) ?? null,
+        select: (id) => this.store.select(id),
+        crumple: (id) => this.store.crumple(id),
+        dragStart: (id, x, y) => {
+          this.world?.beginDrag(id, x, y);
+          this.ui.setDrag(true);
+        },
+        dragMove: (x, y) => {
+          const over = this.world?.moveDrag(x, y) ?? false;
+          this.ui.setDrag(true, over, over && this.shredderBusy());
+        },
+        dragEnd: (x, y) => {
+          const id = this.world?.endDrag(x, y, !this.shredderBusy());
+          this.ui.setDrag(false);
+          if (id !== undefined && id !== null) this.shred(id);
+        },
+        dragCancel: () => { this.world?.cancelDrag(); this.ui.setDrag(false); },
+        hover: (x, y) => this.world?.hover(x, y),
         charge: (progress, holding) => this.onCharge(progress, holding),
         release: (ready) => {
           if (ready) this.store.flip();
-          else
-            this.ui.toast(
-              `조금만 더 꾹! ${HOLD_MS / 1000}초를 채운 뒤 놓아 봐.`,
-            );
+          else this.ui.toast(`조금만 더 꾹! ${HOLD_MS / 1000}초를 채운 뒤 놓아 봐.`);
         },
       });
       this.world.onCameraChange = (manual) => this.ui.setCameraState(manual);
@@ -82,23 +86,26 @@ export class GameController {
   }
 
   private onStateChange = (state: GameSnapshot, event: GameEvent) => {
-    if (event !== "process") this.input?.cancel();
-    if (["subjects", "start", "edit", "reset"].includes(event)) {
-      if (event === "subjects") saveSubjects(state.subjects);
-      this.world?.rebuild(state.subjects, state.phase === "setup");
+    if (["subjects", "reset", "flip"].includes(event.type)) {
+      this.input?.cancel();
+      clearTimeout(this.shredTimer);
     }
-    if (["start", "reset", "select", "mode"].includes(event))
+    if (event.type === "subjects" || event.type === "reset") {
+      if (event.type === "subjects") saveSubjects(state.subjects);
+      this.world?.rebuild(state.subjects);
       this.world?.layout(state);
-    if (event === "process") {
-      const paper = state.papers[state.selected];
+    }
+    if (event.type === "select") this.world?.layout(state);
+    if (event.type === "process") {
+      const paper = state.papers[event.paperId];
       this.world?.processPaper(paper);
-      this.audio.play(state.mode === "crumple" ? "crumple" : "shred");
+      if (paper.progress > 0) this.audio.play(paper.mode === "crumple" ? "crumple" : "shred");
       if (paper.done) {
         this.audio.play("done");
         this.ui.toast(`${paper.name}, 처리 완료. 수고했어!`);
       }
     }
-    if (event === "flip") {
+    if (event.type === "flip") {
       this.world?.flip();
       this.audio.play("flip");
       this.ui.toast("시원하다. 오늘도 시험 보느라 수고했어.");
@@ -106,15 +113,18 @@ export class GameController {
     this.ui.render(state);
   };
 
-  private tap(x: number, y: number) {
-    const state = this.store.snapshot;
-    const hit = this.world?.pick(x, y);
-    if (hit !== null && hit !== undefined && hit !== state.selected) {
-      this.store.select(hit);
-      return;
-    }
-    if (!this.store.process())
-      this.ui.toast("이 과목은 처리 끝! 다른 시험지를 골라 봐.");
+  private shredderBusy() {
+    return this.store.snapshot.papers.some((paper) => paper.mode === "shred" && !paper.done);
+  }
+
+  private shred(id: number) {
+    if (!this.store.beginShred(id)) return;
+    const step = () => {
+      if (!this.store.shredStep(id)) return;
+      if (!this.store.snapshot.papers[id].done)
+        this.shredTimer = window.setTimeout(step, SHRED_STEP_MS);
+    };
+    this.shredTimer = window.setTimeout(step, SHRED_ALIGN_MS);
   }
 
   private onCharge(progress: number, holding: boolean) {
@@ -135,6 +145,7 @@ export class GameController {
 
   dispose() {
     this.disposed = true;
+    clearTimeout(this.shredTimer);
     this.input?.dispose();
     this.unsubscribe();
     this.ui.dispose();

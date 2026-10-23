@@ -5,9 +5,17 @@ export class Shredder {
   readonly group = new THREE.Group();
   readonly slot = new THREE.Vector3(4.4, 1.99, 0);
   private motor = 0;
+  private dropRing = mesh(
+    new THREE.RingGeometry(0.82, 0.9, 48),
+    new THREE.MeshBasicMaterial({ color: "#d5ef64", transparent: true, opacity: 0.8, side: THREE.DoubleSide }),
+    [0, 2.01, 0],
+  );
 
   constructor(scene: THREE.Scene) {
     this.group.position.set(4.4, 0, 0);
+    this.dropRing.rotation.x = -Math.PI / 2;
+    this.dropRing.visible = false;
+    this.group.add(this.dropRing);
     this.group.add(box([1.55, 1.69, 1.2], "#46533c", [0, 0.88, 0]));
     this.group.add(box([1.69, 0.26, 1.3], "#63734a", [0, 1.84, 0]));
     this.group.add(box([1.35, 0.025, 0.105], "#1e2a1f", [0, 1.982, 0]));
@@ -40,9 +48,15 @@ export class Shredder {
   pulse() {
     this.motor = 1;
   }
+  setDropTarget(active: boolean, over: boolean) {
+    this.dropRing.visible = active;
+    (this.dropRing.material as THREE.MeshBasicMaterial).color.set(over ? "#d5ff48" : "#dbe6b7");
+    this.dropRing.scale.setScalar(over ? 1.15 : 1);
+  }
   reset() {
     this.motor = 0;
     this.group.rotation.set(0, 0, 0);
+    this.setDropTarget(false, false);
   }
   update(dt: number) {
     this.motor = Math.max(0, this.motor - dt * 4);

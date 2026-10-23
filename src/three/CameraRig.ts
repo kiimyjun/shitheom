@@ -14,6 +14,8 @@ export class CameraRig {
   private manual = false;
   private gestures = new PointerGestures();
   private abort = new AbortController();
+  private paperPointers = new Set<number>();
+  canOrbit?: (x: number, y: number) => boolean;
   onChange?: (manual: boolean) => void;
 
   constructor(
@@ -25,6 +27,11 @@ export class CameraRig {
     stage.addEventListener(
       "pointerdown",
       (event) => {
+        if (this.paperPointers.size || (event.button === 0 && !this.gestures.count && this.canOrbit?.(event.clientX, event.clientY) === false)) {
+          this.paperPointers.add(event.pointerId);
+          this.controls.enabled = false;
+          return;
+        }
         this.gestures.begin(event.pointerId, event.clientX, event.clientY);
         if (event.button === 1 || event.button === 2 || this.gestures.count > 1)
           this.takeControl();
@@ -49,6 +56,8 @@ export class CameraRig {
     stage.addEventListener(
       "pointerup",
       (event) => {
+        this.paperPointers.delete(event.pointerId);
+        if (!this.paperPointers.size) this.controls.enabled = true;
         this.gestures.end(event.pointerId, event.clientX, event.clientY);
         if (!this.gestures.count) stage.classList.remove("camera-dragging");
       },
@@ -57,12 +66,20 @@ export class CameraRig {
     stage.addEventListener(
       "pointercancel",
       (event) => {
+        this.paperPointers.delete(event.pointerId);
+        if (!this.paperPointers.size) this.controls.enabled = true;
         this.gestures.remove(event.pointerId);
         if (!this.gestures.count) stage.classList.remove("camera-dragging");
       },
       options,
     );
-    stage.addEventListener("wheel", () => this.takeControl(), {
+    stage.addEventListener("lostpointercapture", (event) => {
+      this.paperPointers.delete(event.pointerId);
+      this.gestures.remove(event.pointerId);
+      if (!this.paperPointers.size) this.controls.enabled = true;
+      if (!this.gestures.count) stage.classList.remove("camera-dragging");
+    }, options);
+    stage.addEventListener("wheel", () => { if (!this.paperPointers.size) this.takeControl(); }, {
       ...options,
       passive: true,
     });
@@ -70,6 +87,8 @@ export class CameraRig {
       "blur",
       () => {
         this.gestures.reset();
+        this.paperPointers.clear();
+        this.controls.enabled = true;
         stage.classList.remove("camera-dragging");
       },
       { signal: this.abort.signal },
@@ -114,6 +133,13 @@ export class CameraRig {
     this.controls.enableDamping = !this.motionReduced;
     this.manual = false;
     this.onChange?.(false);
+  }
+
+  freeze() {
+    this.controls.enableDamping = false;
+    this.controls.update();
+    this.controls.enableDamping = !this.motionReduced;
+    this.takeControl();
   }
 
   update(dt: number, view: CameraView, shake: number) {
