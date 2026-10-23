@@ -156,4 +156,3 @@ function renderSound() { $('#sound-toggle').innerHTML = `${svg(muted ? 'mute' : 
 $('#sound-toggle').onclick = () => { muted = !muted; try { localStorage.setItem('sihyeomji-muted', String(muted)); } catch { /* Optional. */ } renderSound(); };
 renderSubjects(); renderSound();
 scene.previewSubjects(subjects);
-window.addEventListener('beforeunload', () => game.destroy(true));

@@ -62,7 +62,8 @@ export class DeskScene extends Phaser.Scene {
     const visibility = () => { if (document.hidden) this.cancelCharge(); };
     window.addEventListener('keydown', down); window.addEventListener('keyup', up);
     window.addEventListener('blur', blur); document.addEventListener('visibilitychange', visibility);
-    this.events.once('shutdown', () => { window.removeEventListener('keydown', down); window.removeEventListener('keyup', up); window.removeEventListener('blur', blur); document.removeEventListener('visibilitychange', visibility); });
+    const cleanup = () => { this.ready = false; this.active = false; this.chargeStart = null; this.chargeSource = null; window.removeEventListener('keydown', down); window.removeEventListener('keyup', up); window.removeEventListener('blur', blur); document.removeEventListener('visibilitychange', visibility); };
+    this.events.once('shutdown', cleanup); this.events.once('destroy', cleanup);
     this.ready = true; this.previewSubjects(this.previewNames);
   }
   private isEditing(target: EventTarget | null) { return target instanceof HTMLElement && (['INPUT','TEXTAREA','SELECT','BUTTON'].includes(target.tagName) || target.isContentEditable); }
@@ -214,7 +215,7 @@ export class DeskScene extends Phaser.Scene {
     if(!this.active||this.flipped||this.mode!=='flip'||this.chargeStart!==null)return;
     this.chargeStart=performance.now();this.chargeSource=source;this.charged=false;this.fxAudio.play('charge');this.chargeUI.setVisible(true);
   }
-  private cancelCharge(){this.chargeStart=null;this.chargeSource=null;this.charged=false;if(this.chargeBar)this.chargeBar.clear();if(this.chargeText)this.chargeText.setText('SPACE 꾹 누르고 → 놓기').setColor('#f1f5dd');if(this.desk&&!this.flipped)this.desk.setPosition(550,378);}
+  private cancelCharge(){this.chargeStart=null;this.chargeSource=null;this.charged=false;if(!this.ready)return;if(this.chargeBar)this.chargeBar.clear();if(this.chargeText)this.chargeText.setText('SPACE 꾹 누르고 → 놓기').setColor('#f1f5dd');if(this.desk&&!this.flipped)this.desk.setPosition(550,378);}
   private releaseCharge(){
     if(this.chargeStart===null)return;const ready=canFlip(this.chargeStart,performance.now());this.cancelCharge();
     if(ready)this.flipDesk();else this.hooks.onMessage('조금만 더 꾹! 1.5초를 채운 뒤 놓아 봐.');
