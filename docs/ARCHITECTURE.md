@@ -44,3 +44,26 @@
 새 동작은 상태 규칙, 컨트롤러 연결, 해당 물체의 표시를 각각 추가합니다. HTML 화면에서 직접 물리 바디를 조작하지 않습니다. 과목 이름은 `textContent`와 Canvas로 표시하여 HTML로 해석하지 않습니다.
 
 `npm test`는 입력 판정과 직접 동작·동시 파쇄 제한·초기화 규칙을 검사합니다. `npm run build`는 타입 검사와 배포 파일 생성을 수행합니다.
+
+## 수정할 파일 찾기
+
+| 바꾸고 싶은 부분                          | 파일                                 |
+| ----------------------------------------- | ------------------------------------ |
+| 처리 단계·충전 시간·최대 과목 수          | `src/domain/rules.mjs`               |
+| 과목·선택·처리 완료·초기화 규칙           | `src/domain/GameStore.ts`            |
+| 카메라 위치·이동 범위·책상 크기·화면 품질 | `src/config.ts`                      |
+| 화면 구성·문구                            | `src/ui/template.ts`                 |
+| 화면 색상·간격·반응형 배치                | `src/style.css`                      |
+| 화면 버튼과 상태 표시                     | `src/ui/GameUI.ts`                   |
+| 키보드·마우스·터치와 충전 취소            | `src/input/InteractionController.ts` |
+| 카메라 조작·관성·자동 시점 전환           | `src/three/CameraRig.ts`             |
+| 책상과 소품의 모양                        | `src/three/Desk.ts`                  |
+| 방·창문·조명                              | `src/three/Room.ts`                  |
+| 시험지 인쇄와 과목 이름                   | `src/three/PaperTexture.ts`          |
+| 종이 구기기·파쇄 모양                     | `src/three/PaperModel.ts`            |
+| 종이 끌기와 놓기 좌표 계산                | `src/three/PaperDrag.ts`             |
+| 파쇄기 모양                               | `src/three/Shredder.ts`              |
+| 중력·충돌·물리 물체 수명                  | `src/physics/PhysicsSystem.ts`       |
+| 효과음                                    | `src/services/audio.ts`              |
+
+클릭과 드래그의 구분 거리는 `src/input/PointerGestures.mjs`의 `DRAG_DISTANCE_PX`에서 조절합니다. 기본값은 화면상의 8픽셀입니다. 드래그·두 손가락 조작·화면 밖 놓기는 더블클릭으로 처리되지 않습니다. 더블클릭 시간과 위치 허용 범위는 `src/input/PaperTaps.mjs`, 자동 파쇄 속도는 `src/game/GameController.ts`의 `SHRED_ALIGN_MS`와 `SHRED_STEP_MS`에서 조절합니다.
