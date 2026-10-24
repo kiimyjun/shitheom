@@ -1,10 +1,12 @@
+<img src="public/logo.svg" alt="시혐지 로고" width="128" height="128" />
+
 # 시혐지
 
 시험을 치른 과목 이름을 입력하고, 책상 위 시험지를 구기거나 파쇄하고 책상을 엎으며 스트레스를 푸는 3D 브라우저 게임입니다.
 
 ## 플레이와 미리보기
 
-**[시혐지 플레이하기](https://kiimyjun.github.io/shitheom/)**
+**[시혐지 플레이 바로가기](https://kiimyjun.github.io/shitheom/)**
 
 ![시혐지의 3D 책상과 시험지](docs/images/gameplay.jpg)
 
