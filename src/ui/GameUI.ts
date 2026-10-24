@@ -143,7 +143,7 @@ export class GameUI {
       title.textContent = "시험은 끝. 이제 네 차례.";
       detail.textContent = "왼쪽 위에서 과목을 추가해 봐.";
     } else if (state.phase === "flipped") {
-      title.textContent = "그래. 오늘은 이 정도면 됐어.";
+      title.textContent = "";
       detail.textContent = "왼쪽 위에서 책상을 다시 세팅할 수 있어.";
     } else {
       const done = state.papers.filter((paper) => paper.done).length;

@@ -29,7 +29,7 @@ export class GameController {
       removeSubject: (index) => this.store.removeSubject(index),
       reset: () => {
         this.store.reset();
-        this.ui.toast("새 시험지 준비 완료. 한 번 더?");
+        this.ui.toast("새 시험지 준비완료");
       },
       sound: () => this.toggleSound(),
       resetCamera: () => {
@@ -108,7 +108,7 @@ export class GameController {
     if (event.type === "flip") {
       this.world?.flip();
       this.audio.play("flip");
-      this.ui.toast("시원하다. 오늘도 시험 보느라 수고했어.");
+      this.ui.toast("시험보느라 수고했어");
     }
     this.ui.render(state);
   };
