@@ -150,7 +150,7 @@ export class GameUI {
       const feeding = state.papers.find((paper) => paper.mode === "shred" && !paper.done);
       const selected = state.papers[state.selected];
       const crumpling = selected?.mode === "crumple" && !selected.done;
-      title.textContent = feeding ? `${feeding.name}, 미련까지 갈아 버리는 중…`
+      title.textContent = feeding ? `${feeding.name}, 갈아 버리는 중 ...`
         : done === state.papers.length ? "남은 건 책상뿐. 시원하게 엎어 볼까?"
         : "";
       detail.textContent = feeding ? "자동으로 파쇄돼. 잠깐만 기다려 줘."

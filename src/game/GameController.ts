@@ -102,7 +102,7 @@ export class GameController {
       if (paper.progress > 0) this.audio.play(paper.mode === "crumple" ? "crumple" : "shred");
       if (paper.done) {
         this.audio.play("done");
-        this.ui.toast(`${paper.name}, 처리 완료. 수고했어!`);
+        this.ui.toast(`${paper.name}, 처리완료`);
       }
     }
     if (event.type === "flip") {
