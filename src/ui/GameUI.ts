@@ -128,12 +128,6 @@ export class GameUI {
       chip.append(label, button);
       list.append(chip);
     });
-    if (!state.subjects.length) {
-      const empty = document.createElement("p");
-      empty.className = "empty-note";
-      empty.textContent = "시험지는 여기 두고, 마음만 가볍게.";
-      list.append(empty);
-    }
   }
 
   private renderHint(state: GameSnapshot) {

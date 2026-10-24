@@ -49,7 +49,6 @@ h1 { margin: 0; font-size: 21px; font-weight: 800; letter-spacing: -.9px; }
 .subject-chip button { border: 0; background: none; color: #939b81; font-size: 16px; padding: 0 5px; min-width: 24px; }
 .subject-chip button:hover { color: #383f29; }
 .subject-chip.done { color: #8a9478; background: #f7f8ef; }
-.empty-note { font-size: 11px; color: #9ba18c; margin: 0 0 3px; }
 .quick-add { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 13px; }
 .quick-add button { border: 0; background: none; color: #7d876a; padding: 4px 0; font-size: 10px; }
 .quick-add button + button::before { content: "·"; margin-right: 6px; color: #c3c9b5; }
