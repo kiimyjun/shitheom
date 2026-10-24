@@ -159,11 +159,6 @@ export class InteractionController {
       if (!this.callbacks.enabled()) { this.cancelCharge(); return; }
       const progress = chargeProgress(holding.started, performance.now());
       this.callbacks.charge(progress, true);
-      if (pointer !== null && progress >= 1) {
-        this.cancelPointer();
-        this.callbacks.release(true);
-        return;
-      }
       this.animation = requestAnimationFrame(frame);
     };
     frame();

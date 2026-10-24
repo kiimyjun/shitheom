@@ -82,18 +82,24 @@ function harness(t) {
   };
 }
 
-test("one touch on empty space flips exactly once at 1.5 seconds without a release", (t) => {
+test("a charged touch stays ready while held and flips exactly once on release", (t) => {
   const h = harness(t);
   h.pointer("pointerdown");
   h.frameAt(HOLD_MS - 1);
   assert.deepEqual(h.releases, []);
   assert.equal(h.charges.at(-1).holding, true);
   h.frameAt(HOLD_MS);
+  assert.deepEqual(h.releases, []);
+  assert.deepEqual(h.charges.at(-1), { progress: 1, holding: true });
+  h.frameAt(HOLD_MS * 2);
+  assert.deepEqual(h.releases, []);
+  assert.deepEqual(h.charges.at(-1), { progress: 1, holding: true });
+  h.pointer("pointerup");
   assert.deepEqual(h.releases, [true]);
   assert.deepEqual(h.charges.at(-1), { progress: 0, holding: false });
   assert.equal(h.frames.size, 0);
   h.pointer("pointerup");
-  h.frameAt(HOLD_MS * 2);
+  h.frameAt(HOLD_MS * 3);
   assert.deepEqual(h.releases, [true]);
 });
 
@@ -134,8 +140,27 @@ test("a two-finger camera gesture stays cancelled after one finger is lifted", (
   assert.deepEqual(h.releases, []);
   h.pointer("pointerdown");
   h.frameAt(HOLD_MS * 2);
+  assert.deepEqual(h.releases, []);
+  h.pointer("pointerup");
   assert.deepEqual(h.releases, [true]);
 });
+
+for (const reason of ["drag", "second-finger"])
+  test(`${reason} cancels a fully charged touch before release`, (t) => {
+    const h = harness(t);
+    h.pointer("pointerdown");
+    h.frameAt(HOLD_MS);
+    assert.deepEqual(h.charges.at(-1), { progress: 1, holding: true });
+    if (reason === "drag") h.pointer("pointermove", { clientX: 220 });
+    else {
+      h.pointer("pointerdown", { pointerId: 2, clientX: 250 });
+      h.pointer("pointerup", { pointerId: 2, clientX: 250 });
+    }
+    h.pointer("pointerup");
+    h.frameAt(HOLD_MS * 2);
+    assert.deepEqual(h.releases, []);
+    assert.deepEqual(h.charges.at(-1), { progress: 0, holding: false });
+  });
 
 test("paper holds and drags never start a desk charge", (t) => {
   const h = harness(t);
@@ -182,6 +207,8 @@ test("releasing Space cannot complete or interrupt a touch charge", (t) => {
   assert.deepEqual(h.releases, []);
   assert.equal(h.charges.at(-1).holding, true);
   h.frameAt(HOLD_MS);
+  assert.deepEqual(h.releases, []);
+  h.pointer("pointerup");
   assert.deepEqual(h.releases, [true]);
 });
 
