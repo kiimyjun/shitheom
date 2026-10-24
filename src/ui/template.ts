@@ -2,7 +2,7 @@ import { svg } from "./icons";
 import { HOLD_MS, MAX_SUBJECTS } from "../domain/rules.mjs";
 
 export const template = `
-<main class="game-shell" aria-label="시혐지 3D 게임">
+<main class="game-shell" aria-label="시혐지 - 시험 부숴버리기">
   <div id="game-stage" role="application" aria-label="시험지를 더블클릭할 때마다 조금씩 구겨집니다. 시험지를 파쇄기로 끌어놓으면 파쇄됩니다. 빈 공간 드래그로 시점을 움직이고, 스페이스바를 길게 누른 뒤 놓으면 책상이 뒤집힙니다." tabindex="0">
     <div class="loading-screen" id="loading-screen"><span class="loading-spinner"></span><strong>네 책상을 준비하는 중…</strong></div>
   </div>

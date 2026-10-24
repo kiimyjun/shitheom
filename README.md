@@ -4,7 +4,7 @@
 
 ## 플레이와 미리보기
 
-GitHub Pages 배포 준비 중입니다. 배포 후 플레이 링크가 추가됩니다.
+**[시혐지 플레이하기](https://kiimyjun.github.io/shitheom/)**
 
 ![시혐지의 3D 책상과 시험지](docs/images/gameplay.jpg)
 

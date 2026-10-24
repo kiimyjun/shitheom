@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"
+     role="img" aria-labelledby="logo-title logo-desc">
+  <title id="logo-title">시혐지</title>
+  <desc id="logo-desc">연두색 바탕 위에 빨간 ㅗ 모양이 그려진 구겨진 시험지</desc>
+
+  <rect width="128" height="128" rx="28" fill="#D5EF64"/>
+
+  <!-- 구겨진 시험지와 그림자 -->
+  <path d="M36 17 82 20 103 42 98 60 105 82 84 108 61 102 40 110 22 86 28 63 22 42Z"
+        transform="translate(3 4)" fill="#293022" opacity=".16"/>
+  <path d="M36 17 82 20 103 42 98 60 105 82 84 108 61 102 40 110 22 86 28 63 22 42Z"
+        fill="#FFFDF5" stroke="#293022" stroke-width="4.5" stroke-linejoin="round"/>
+
+  <!-- 종이가 접힌 면 -->
+  <path d="M24 43 40 48 29 62ZM24 85 47 82 40 107ZM61 100 67 87 82 105ZM97 61 85 67 102 81Z"
+        fill="#E6EAD8"/>
+  <path d="M82 20 79 44 103 42" fill="#DCE3C8"
+        stroke="#293022" stroke-width="3.5" stroke-linejoin="round"/>
+
+  <!-- 시험지의 인쇄선과 구김 -->
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M42 32 64 34M39 40 56 42" stroke="#A9B398" stroke-width="3"/>
+    <path d="M24 43 40 48M24 85 47 82 40 107M61 100 67 87M97 61 85 67"
+          stroke="#C2CBB1" stroke-width="2.5"/>
+
+    <!-- 빨간 ㅗ 모양 -->
+    <path d="M63 54V81M44 81H82" stroke="#E34F3F" stroke-width="9"/>
+
+    <!-- 충격을 나타내는 짧은 선 -->
+    <path d="M15 30 10 24M105 23 112 16M113 96 119 100"
+          stroke="#293022" stroke-width="4"/>
+  </g>
+</svg>
