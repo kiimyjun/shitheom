@@ -176,7 +176,7 @@ export function createProps(desk: THREE.Group): LooseProp[] {
   const noteMesh = mesh(
     new THREE.PlaneGeometry(0.9, 0.87),
     new THREE.MeshStandardMaterial({
-      map: labelTexture("이번 시험도\n일단 끝!", "#60713e", "#d4e67e"),
+      color: "#d4e67e",
       side: THREE.DoubleSide,
     }),
   );

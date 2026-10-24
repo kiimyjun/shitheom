@@ -28,9 +28,7 @@ svg { width: 22px; height: 22px; flex-shrink: 0; }
 .desk-panel { position: absolute; z-index: 3; top: max(22px, env(safe-area-inset-top)); left: max(22px, env(safe-area-inset-left)); width: 310px; background: rgba(255,253,245,.96); border: 1px solid rgba(255,255,255,.8); border-radius: 18px; box-shadow: 0 8px 40px #29302214, 0 1px 3px #2930220a; backdrop-filter: blur(18px); overflow: hidden; }
 .panel-toggle { width: 100%; min-height: 66px; padding: 16px 18px; display: flex; align-items: center; gap: 12px; background: transparent; border: 0; text-align: left; }
 .panel-toggle:hover { background: #e9edda50; }
-.brand { display: flex; align-items: center; gap: 8px; font-family: "Black Han Sans", sans-serif; font-size: 27px; line-height: 1; letter-spacing: -1px; }
-.brand svg { width: 24px; height: 26px; }
-.brand-dot { color: #81983b; }
+.brand { font-family: "Black Han Sans", sans-serif; font-size: 27px; line-height: 1; letter-spacing: -1px; }
 .panel-summary { margin-left: auto; color: var(--muted); font-size: 11px; white-space: nowrap; }
 .fold-icon { font-size: 21px; color: #747c61; line-height: 1; transition: transform .2s; }
 .collapsed .fold-icon { transform: rotate(180deg); }
@@ -69,9 +67,8 @@ h1 { margin: 0; font-size: 21px; font-weight: 800; letter-spacing: -.9px; }
 .desk-status strong { font-size: 16px; font-weight: 800; letter-spacing: -.5px; }
 .desk-status > span { font-size: 11px; color: #697257; }
 .control-guide { display: flex; align-items: center; background: #fffdf5eb; border: 1px solid #ffffffb3; border-radius: 15px; box-shadow: 0 3px 20px #2930220a; backdrop-filter: blur(16px); padding: 15px 0; }
-.control-guide > div { display: flex; align-items: center; justify-content: center; gap: 11px; padding: 0 25px; text-align: left; }
+.control-guide > div { display: flex; align-items: center; justify-content: center; padding: 0 25px; text-align: left; }
 .control-guide > div + div { border-left: 1px solid #dfe4d1; }
-.control-guide svg { color: #6d7f46; width: 25px; height: 25px; }
 .control-guide span { display: flex; flex-direction: column; gap: 4px; white-space: nowrap; }
 .control-guide strong { font-size: 12px; font-weight: 700; }
 .control-guide small { font-size: 10px; color: #808871; }
@@ -82,8 +79,7 @@ kbd { font: 10px "DM Mono", monospace; border: 1px solid #d0d8bf; border-radius:
 .drag-hint.over { color: #2d3929; background: var(--lime); }
 .charge-overlay { top: 28%; min-width: 280px; padding: 22px 26px; }
 .charge-overlay strong { font-size: 17px; }
-.charge-overlay small { font-size: 10px; color: #b6c29c; }
-.charge-track { height: 7px; background: #576448; border-radius: 5px; margin: 14px 0 9px; overflow: hidden; }
+.charge-track { height: 7px; background: #576448; border-radius: 5px; margin: 14px 0 0; overflow: hidden; }
 #charge-fill { height: 100%; width: 0; background: var(--lime); border-radius: 5px; }
 .charged strong { color: var(--lime); }
 .loading-screen { position: absolute; z-index: 5; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 14px; background: #e7e9daf2; font-size: 14px; }
@@ -103,8 +99,7 @@ kbd { font: 10px "DM Mono", monospace; border: 1px solid #d0d8bf; border-radius:
 @media (max-width: 600px) {
   .desk-panel { width: min(270px, calc(100% - 110px)); left: 12px; top: max(12px, env(safe-area-inset-top)); border-radius: 14px; }
   .panel-toggle { padding: 14px; min-height: 58px; gap: 7px; }
-  .brand { font-size: 24px; gap: 5px; }
-  .brand svg { width: 21px; }
+  .brand { font-size: 24px; }
   .panel-summary { font-size: 9px; }
   .panel-body { padding: 0 14px 14px; max-height: calc(100dvh - 160px); }
   .panel-heading { margin-top: 14px; }
@@ -117,8 +112,7 @@ kbd { font: 10px "DM Mono", monospace; border: 1px solid #d0d8bf; border-radius:
   .desk-status strong { font-size: 13px; }
   .desk-status > span { font-size: 10px; }
   .control-guide { padding: 12px 0; border-radius: 12px; }
-  .control-guide > div { padding: 0 12px; gap: 6px; }
-  .control-guide svg { width: 19px; height: 19px; }
+  .control-guide > div { padding: 0 12px; }
   .control-guide strong { font-size: 10px; }
   .control-guide small { font-size: 8px; }
   kbd { font-size: 8px; padding: 1px 2px; }
@@ -128,7 +122,6 @@ kbd { font: 10px "DM Mono", monospace; border: 1px solid #d0d8bf; border-radius:
 }
 @media (max-width: 390px) {
   .control-guide > div { padding: 0 9px; }
-  .control-guide svg { display: none; }
   .panel-summary { display: none; }
   .fold-icon { margin-left: auto; }
 }

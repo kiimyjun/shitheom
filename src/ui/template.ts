@@ -8,7 +8,7 @@ export const template = `
   </div>
   <section class="desk-panel" id="desk-panel" aria-label="시험지와 책상 설정">
     <button id="panel-toggle" class="panel-toggle" type="button" aria-expanded="true" aria-controls="panel-body" aria-label="시험지 설정 접기">
-      <span class="brand">${svg("paper")}<span>시혐지<span class="brand-dot">.</span></span></span>
+      <span class="brand">시혐지</span>
       <span class="panel-summary" id="panel-summary">책상 준비</span><span class="fold-icon" aria-hidden="true">⌃</span>
     </button>
     <div id="panel-body" class="panel-body">
@@ -26,13 +26,13 @@ export const template = `
     <button id="sound-toggle" type="button"></button>
   </div>
   <div class="drag-hint" id="drag-hint" role="status" hidden>파쇄기 위로 끌어다 놓아 봐.</div>
-  <div class="charge-overlay" id="charge-overlay" hidden><strong id="charge-label">스페이스바를 꾹 눌러 봐.</strong><div class="charge-track"><div id="charge-fill"></div></div><small>${HOLD_MS / 1000}초 이상 누른 뒤 손을 떼!</small></div>
+  <div class="charge-overlay" id="charge-overlay" hidden><strong id="charge-label">스페이스바를 꾹 눌러 봐.</strong><div class="charge-track"><div id="charge-fill"></div></div></div>
   <div class="bottom-hud">
     <div class="desk-status"><strong id="hint-title" hidden></strong><span id="hint-detail">왼쪽 위에서 과목을 추가해 봐.</span></div>
     <div class="control-guide" aria-label="게임 조작 안내">
-      <div>${svg("crumple")}<span><strong>더블클릭</strong><small>조금씩 구기기</small></span></div>
-      <div>${svg("shred")}<span><strong>끌어놓기</strong><small>시험지 → 파쇄기</small></span></div>
-      <div>${svg("flip")}<span><strong><kbd>SPACE</kbd> 꾹, 떼기</strong><small>${HOLD_MS / 1000}초 충전 후 책상 엎기</small></span></div>
+      <div><span><strong>더블클릭</strong><small>조금씩 구기기</small></span></div>
+      <div><span><strong>끌어놓기</strong><small>시험지 → 파쇄기</small></span></div>
+      <div><span><strong><kbd>SPACE</kbd> 꾹, 떼기</strong><small>${HOLD_MS / 1000}초 충전 후 책상 엎기</small></span></div>
     </div>
     <p class="camera-hint">빈 공간 드래그로 둘러보기 <span>·</span> 휠로 확대·축소</p>
   </div>

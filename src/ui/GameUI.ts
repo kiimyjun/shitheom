@@ -171,7 +171,7 @@ export class GameUI {
   setCharge(progress: number, holding: boolean) {
     this.get("#charge-overlay").hidden = !holding;
     this.get("#charge-fill").style.width = `${progress * 100}%`;
-    this.get("#charge-label").textContent = progress >= 1 ? "준비됐어. 손을 떼!"
+    this.get("#charge-label").textContent = progress >= 1 ? "슈웃"
       : `꾹… ${((progress * HOLD_MS) / 1000).toFixed(1)} / ${HOLD_MS / 1000}초`;
     this.get("#charge-overlay").classList.toggle("charged", progress >= 1);
   }
