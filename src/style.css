@@ -21,7 +21,7 @@ svg { width: 22px; height: 22px; flex-shrink: 0; }
 [hidden] { display: none !important; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 .game-shell { position: relative; width: 100%; height: 100%; height: 100dvh; overflow: hidden; }
-#game-stage { position: absolute; inset: 0; outline: none; touch-action: none; user-select: none; -webkit-user-select: none; cursor: grab; }
+#game-stage { position: absolute; inset: 0; outline: none; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; cursor: grab; }
 #game-stage canvas { display: block; width: 100%; height: 100%; }
 #game-stage.paper-hover { cursor: pointer; }
 #game-stage.camera-dragging, #game-stage.paper-dragging { cursor: grabbing; }
@@ -71,6 +71,11 @@ h1 { margin: 0; font-size: 21px; font-weight: 800; letter-spacing: -.9px; }
 .control-guide > div + div { border-left: 1px solid #dfe4d1; }
 .control-guide span { display: flex; flex-direction: column; gap: 4px; white-space: nowrap; }
 .control-guide strong { font-size: 12px; font-weight: 700; }
+.control-guide .touch-control { display: none; }
+@media (pointer: coarse) {
+  .control-guide .keyboard-control { display: none; }
+  .control-guide .touch-control { display: block; }
+}
 .control-guide small { font-size: 10px; color: #808871; }
 kbd { font: 10px "DM Mono", monospace; border: 1px solid #d0d8bf; border-radius: 4px; padding: 2px 4px; }
 .camera-hint { font-size: 10px; color: #7f886e; margin: 11px 0 0; }
