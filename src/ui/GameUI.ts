@@ -106,8 +106,6 @@ export class GameUI {
     const done = state.papers.filter((paper) => paper.done).length;
     this.get("#panel-summary").textContent = state.subjects.length ? `시험지 ${state.subjects.length}장` : "책상 준비";
     this.get("#done-count").textContent = `${done} / ${state.subjects.length} 처리`;
-    this.get("#stage-label").textContent = state.phase === "flipped"
-      ? "시원하다. 이제 좀 살겠네." : "오늘도 시험 보느라 수고했어.";
     // Keep delete buttons stable while a pointer is interacting with the panel.
     const key = JSON.stringify([state.subjects, state.papers.map((paper) => paper.done)]);
     if (this.subjectsKey !== key) { this.subjectsKey = key; this.renderSubjects(state); }
@@ -154,12 +152,12 @@ export class GameUI {
       const crumpling = selected?.mode === "crumple" && !selected.done;
       title.textContent = feeding ? `${feeding.name}, 미련까지 갈아 버리는 중…`
         : done === state.papers.length ? "남은 건 책상뿐. 시원하게 엎어 볼까?"
-        : crumpling ? `${selected.name}, 조금 더 구겨 버려.`
-        : "시험지를 직접 집어 봐.";
+        : "";
       detail.textContent = feeding ? "자동으로 파쇄돼. 잠깐만 기다려 줘."
-        : crumpling ? `구기기 ${selected.progress} / ${CRUMPLE_STEPS} · 더블클릭할 때마다 한 단계씩.`
-        : `${done} / ${state.papers.length}장 처리 · 점수도, 제한 시간도 없어.`;
+        : crumpling ? `구기기 ${selected.progress} / ${CRUMPLE_STEPS}`
+        : `${done} / ${state.papers.length}장 처리`;
     }
+    title.hidden = !title.textContent;
   }
 
   setDrag(active: boolean, over = false, busy = false) {
@@ -167,7 +165,7 @@ export class GameUI {
     hint.hidden = !active;
     hint.classList.toggle("over", over && !busy);
     hint.textContent = busy ? "파쇄기 사용 중. 잠깐만 기다려 줘."
-      : over ? "여기서 놓으면 드르륵!" : "파쇄기 위로 끌어다 놓아 봐.";
+      : over ? "드르륵" : "파쇄기 위로 끌어다 놓아 봐.";
   }
 
   setCharge(progress: number, holding: boolean) {

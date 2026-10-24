@@ -68,7 +68,7 @@ export function createRoom(scene: THREE.Scene) {
     new THREE.PlaneGeometry(1.35, 1.85),
     new THREE.MeshStandardMaterial({
       map: labelTexture(
-        "시험은 끝.\n나는 계속.",
+        "D-Day",
         "#687343",
         "#edf0da",
         512,

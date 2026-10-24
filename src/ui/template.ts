@@ -12,8 +12,7 @@ export const template = `
       <span class="panel-summary" id="panel-summary">책상 준비</span><span class="fold-icon" aria-hidden="true">⌃</span>
     </button>
     <div id="panel-body" class="panel-body">
-      <div class="panel-heading"><span class="eyebrow">YOUR DESK, YOUR RULES</span><span id="done-count">0 / 0</span></div>
-      <h1>어떤 시험을 봤어?</h1><p class="panel-description">오늘 본 과목, 여기에 두고 가.</p>
+      <div class="panel-heading"><h1>어떤 시험을 봤어?</h1><span id="done-count">0 / 0</span></div>
       <form id="subject-form"><label class="sr-only" for="subject-input">시험 과목 이름</label><div class="input-wrap"><input id="subject-input" placeholder="예: 미적분학" maxlength="24" autocomplete="off"/><button type="submit" aria-label="과목 추가">+</button></div></form>
       <p id="form-feedback" class="form-feedback" role="status" aria-live="polite">최대 ${MAX_SUBJECTS}과목 · 추가하면 책상에 바로 올라가.</p>
       <div id="subject-chips" class="subject-chips"></div>
@@ -26,11 +25,10 @@ export const template = `
     <button id="camera-button" type="button" aria-label="전체 보기" title="전체 보기">↗<span>전체 보기</span></button>
     <button id="sound-toggle" type="button"></button>
   </div>
-  <div class="scene-caption"><span class="live-dot"></span><span id="stage-label">오늘도 시험 보느라 수고했어.</span></div>
   <div class="drag-hint" id="drag-hint" role="status" hidden>파쇄기 위로 끌어다 놓아 봐.</div>
   <div class="charge-overlay" id="charge-overlay" hidden><strong id="charge-label">스페이스바를 꾹 눌러 봐.</strong><div class="charge-track"><div id="charge-fill"></div></div><small>${HOLD_MS / 1000}초 이상 누른 뒤 손을 떼!</small></div>
   <div class="bottom-hud">
-    <div class="desk-status"><strong id="hint-title">오늘 본 시험, 여기에 올려놓자.</strong><span id="hint-detail">왼쪽 위에서 과목을 추가해 봐.</span></div>
+    <div class="desk-status"><strong id="hint-title" hidden></strong><span id="hint-detail">왼쪽 위에서 과목을 추가해 봐.</span></div>
     <div class="control-guide" aria-label="게임 조작 안내">
       <div>${svg("crumple")}<span><strong>더블클릭</strong><small>조금씩 구기기</small></span></div>
       <div>${svg("shred")}<span><strong>끌어놓기</strong><small>시험지 → 파쇄기</small></span></div>
