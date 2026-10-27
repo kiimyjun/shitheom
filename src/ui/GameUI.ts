@@ -134,7 +134,7 @@ export class GameUI {
     const title = this.get("#hint-title");
     const detail = this.get("#hint-detail");
     if (state.phase === "setup") {
-      title.textContent = "시험은 끝. 이제 네 차례.";
+      title.textContent = "";
       detail.textContent = "왼쪽 위에서 과목을 추가해 봐.";
     } else if (state.phase === "flipped") {
       title.textContent = "";

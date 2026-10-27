@@ -108,7 +108,7 @@ export class GameController {
     if (event.type === "flip") {
       this.world?.flip();
       this.audio.play("flip");
-      this.ui.toast("시험보느라 수고했어");
+      this.ui.toast("시험 끝");
     }
     this.ui.render(state);
   };
